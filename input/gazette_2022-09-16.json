@@ -1,0 +1,20 @@
+{
+  "ADD": [
+    {
+      "ministry_name": "Minister of Investment Promotion",
+      "affected_column": "II",
+      "details": [
+        "Inserted items 5-7: Sri Lanka Export Development Board, Board of Investment of Sri Lanka, Colombo Port City Economic Commission"
+      ]
+    }
+  ],
+    "OMIT": [
+        {
+        "ministry_name": "Minister of Finance, Economic Stabilization and National Policies",
+        "affected_column": "II",
+        "details": [
+            "Omitted items 26, 50, 51"
+        ]
+        }
+    ]
+}

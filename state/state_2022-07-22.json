@@ -1,0 +1,25 @@
+{
+  "ministries": [
+    {
+      "name": "Minister of Industries",
+      "departments": [
+        "Department A",
+        "Department B",
+        "Department C"
+      ]
+    },
+    {
+      "name": "Minister of Health",
+      "departments": [
+        "Department D",
+        "Department E"
+      ]
+    },
+    {
+      "name": "Minister of Education",
+      "departments": [
+        "Department F"
+      ]
+    }
+  ]
+}
