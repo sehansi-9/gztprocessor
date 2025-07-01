@@ -32,3 +32,23 @@ def save_state(state_data: dict, date_str: str = None):
         json.dump(state_data, f, indent=2, ensure_ascii=False)
 
     print(f"✅ State saved to {path}")
+
+
+def get_latest_state() -> tuple[str, dict]:
+    """
+    Return (date_str, state_dict) of the most recent saved state.
+    """
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+    state_files = sorted([
+        f for f in STATE_DIR.glob("state_*.json")
+    ])
+
+    if not state_files:
+        raise FileNotFoundError("No state files found.")
+
+    latest_path = state_files[-1]
+    latest_date = latest_path.stem.replace("state_", "")
+
+    with open(latest_path, "r", encoding="utf-8") as f:
+        return latest_date, json.load(f)
