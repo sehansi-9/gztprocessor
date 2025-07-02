@@ -37,6 +37,22 @@ def get_latest_state() -> tuple[str, dict]:
 
     with open(latest_path, "r", encoding="utf-8") as f:
         return latest_date, json.load(f)
+    
+def get_latest_state_date() -> str:
+    """
+    Return date of the most recent saved state.
+    """
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+    state_files = sorted([f for f in STATE_DIR.glob("state_*.json")])
+
+    if not state_files:
+        raise FileNotFoundError("No state files found.")
+
+    latest_path = state_files[-1]
+    latest_date = latest_path.stem.replace("state_", "")
+
+    return latest_date
 
 
 def load_initial_state_to_db(date_str: str):
@@ -61,7 +77,7 @@ def load_initial_state_to_db(date_str: str):
     ministries = data.get("ministers", [])
 
     # here send the data to the frontend for validation
-    #then get the confirmed list of ministries with departments
+    # then get the confirmed list of ministries with departments
 
     with get_connection() as conn:
         cur = conn.cursor()

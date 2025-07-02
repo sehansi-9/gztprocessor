@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from pathlib import Path
 
 import state_manager
+import gazette_processor
 
 from db import init_db
 
@@ -54,3 +55,18 @@ def create_state_from_first_gazette(date: str):
         return {"message": f"State created for {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
+
+@app.post("/state/create/{date}")
+def create_state_from_amendment(date: str):
+    """
+    Trigger processing of an amendment gazette and return the detected transactions.
+    """
+    try:
+        transactions = gazette_processor.process_amendment_gazette(date)
+        return {
+            "message": f"Amendment processed for {date}",
+            "transactions": transactions
+        }
+    except FileNotFoundError:
+        return {"error": f"Gazette input file for {date} not found."}
+
