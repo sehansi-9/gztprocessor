@@ -5,6 +5,12 @@ from pathlib import Path
 
 import state_manager
 
+from db import init_db
+
+if __name__ == "__main__":
+    init_db()
+    print("✅ Database initialized.")
+
 app = FastAPI()
 
 
@@ -37,13 +43,14 @@ def get_state_by_date(date: str):
         return {"error": f"State file for {date} not found."}
 
 
-@app.post("/state/create/{date}")
-def create_state_from_gazette(date: str):
+#call this endpoint to create the first state from gazette JSON
+@app.post("/state/create/initial/{date}")
+def create_state_from_first_gazette(date: str):
     """
-    Trigger state creation from input/gazette_<date>.json
+    Trigger state creation from input/gazette_<date>.json 
     """
     try:
-        state = state_manager.save_first_state(date)
-        return {"message": f"State created for {date}", "state": state}
+        state_manager.load_initial_state_to_db(date)
+        return {"message": f"State created for {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
