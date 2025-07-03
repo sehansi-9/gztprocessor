@@ -4,35 +4,55 @@
       "ministry_name": "Minister of Defence",
       "affected_column": "II",
       "details": [
-        "Inserted items 3-5: National Security Advisory Unit, Cyber Defence Centre, Maritime Surveillance Division"
+        "Inserted: item 3 — National Security Advisory Unit",
+        "Inserted: item 4 — Cyber Defence Centre",
+        "Inserted: item 5 — Maritime Surveillance Division"
       ]
     },
     {
       "ministry_name": "Minister of Health",
       "affected_column": "II",
       "details": [
-        "Inserted: Rural Health Outreach Unit after item 6"
+        "Inserted: item 7 — Rural Health Outreach Unit"
       ]
     },
     {
       "ministry_name": "Minister of Labour",
       "affected_column": "II",
       "details": [
-        "Inserted items 5 and 6: National Productivity Secretariat, Employment Services Division"
+        "Inserted: item 5 — National Productivity Secretariat",
+        "Inserted: item 6 — Employment Services Division"
       ]
     },
     {
       "ministry_name": "Minister of Energy",
       "affected_column": "II",
       "details": [
-        "Inserted: Ceylon Petroleum Corporation after item 3"
+        "Inserted: item 4 — Ceylon Petroleum Corporation"
       ]
     },
     {
       "ministry_name": "Minister of Finance",
       "affected_column": "II",
       "details": [
-        "Inserted items 2, 5 and 8: Tax Appeals Commission, Department of Public Finance, Development Lotteries Board"
+        "Inserted: item 2 — Tax Appeals Commission",
+        "Inserted: item 5 — Department of Public Finance",
+        "Inserted: item 8 — Development Lotteries Board"
+      ]
+    },
+    {
+      "ministry_name": "Minister of Environment",
+      "affected_column": "II",
+      "details": [
+        "Inserted: item 2 — Trade Union Relations Board",
+        "Inserted: item 3 — Occupational Safety and Health"
+      ]
+    },
+    {
+      "ministry_name": "Minister of Environment",
+      "affected_column": "II",
+      "details": [
+        "Inserted: item 4 — Mahaweli Authority"
       ]
     }
   ],
@@ -41,35 +61,32 @@
       "ministry_name": "Minister of Environment",
       "affected_column": "II",
       "details": [
-        "Omitted items 9 and 10"
+        "Omitted: item 9",
+        "Omitted: item 10"
       ]
     },
     {
       "ministry_name": "Minister of Finance",
       "affected_column": "II",
       "details": [
-        "Omitted items 2, 5, 8"
-      ]
-    },
-    {
-      "ministry_name": "Minister of Justice",
-      "affected_column": "II",
-      "details": [
-        "Omitted items 2-4"
+        "Omitted: item 2",
+        "Omitted: item 5",
+        "Omitted: item 8"
       ]
     },
     {
       "ministry_name": "Minister of Labour",
       "affected_column": "II",
       "details": [
-        "Omitted items 5 and 6"
+        "Omitted: item 5",
+        "Omitted: item 6"
       ]
     },
     {
       "ministry_name": "Minister of Agriculture",
       "affected_column": "II",
       "details": [
-        "Omitted: Ceylon Petroleum Corporation"
+        "Omitted: item 9"
       ]
     }
   ]

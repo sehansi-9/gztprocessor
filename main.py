@@ -70,3 +70,11 @@ def create_state_from_amendment(date: str):
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
 
+
+@app.post("/reset")
+def reset_system():
+    """
+    Deletes all state JSONs and clears database tables.
+    """
+    state_manager.clear_all_state_data()
+    return {"message": "System reset: all state files deleted and database cleared."}
