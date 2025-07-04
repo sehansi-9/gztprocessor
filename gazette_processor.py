@@ -45,13 +45,20 @@ def extract_column_II_department_changes(
             # Match flexible patterns like:
             # "Inserted: item 3 — XYZ", "Inserted: XYZ after item 6", "Inserted: XYZ"
             match = re.match(
-                r"Inserted:\s*(?:item\s*\d+\s*—\s*)?(.*?)(?:\s+after item\s+\d+)?$",
+                r"Inserted:\s*(?:item\s*(\d+)\s*—\s*)?(.*?)(?:\s+after item\s+\d+)?$",
                 detail.strip(),
                 flags=re.IGNORECASE,
             )
-            if match:
-                department_name = match.group(1).strip()
-                departments.append(department_name)
+        if match:
+            position = match.group(1)  # This will be the number if "item X —" exists
+            department_name = match.group(2).strip()
+            departments.append(
+                {
+                    "name": department_name,
+                    "position": int(position) if position else None,
+                }
+            )
+
         if departments:
             added_departments.append(
                 {"ministry_name": ministry_name, "departments": departments}
@@ -82,9 +89,7 @@ def extract_column_II_department_changes(
     return added_departments, removed_departments_raw
 
 
-def resolve_omitted_items(
-    removed_departments_raw: list[dict], previous_date: str
-) -> list[dict]:
+def resolve_omitted_items(removed_departments_raw: list[dict], previous_date: str) -> list[dict]:
     """
     Convert position-based or name-based omissions into department names from the DB.
     """
@@ -147,8 +152,10 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
     # Build sets for easy comparison
     added_map = {}  # dept -> ministry
     for item in added:
-        for dept in item["departments"]:
-            added_map[dept] = item["ministry_name"]
+        for dept_entry in item["departments"]:
+            name = dept_entry["name"]
+            pos = dept_entry.get("position")  # might be None
+            added_map[name] = {"ministry": item["ministry_name"], "position": pos}
 
     removed_map = {}  # dept -> ministry
     for item in removed:
@@ -160,22 +167,28 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
     # Detect MOVEs (in both removed and added)
     for dept, from_min in removed_map.items():
         if dept in added_map:
-            to_min = added_map[dept]
+            to_entry = added_map[dept]
             transactions.append(
                 {
                     "type": "MOVE",
                     "department": dept,
                     "from_ministry": from_min,
-                    "to_ministry": to_min,
+                    "to_ministry": to_entry["ministry"],
+                    "position": to_entry["position"],
                 }
             )
             processed.add(dept)
 
     # Remaining ADDs
-    for dept, to_min in added_map.items():
+    for dept, to_entry in added_map.items():
         if dept not in processed:
             transactions.append(
-                {"type": "ADD", "department": dept, "to_ministry": to_min}
+                {
+                    "type": "ADD",
+                    "department": dept,
+                    "to_ministry": to_entry["ministry"],
+                    "position": to_entry["position"],
+                }
             )
 
     # Remaining TERMINATEs

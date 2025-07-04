@@ -71,7 +71,7 @@ def create_state_from_amendment(date: str):
         return {"error": f"Gazette input file for {date} not found."}
 
 
-@app.post("/reset")
+@app.delete("/reset")
 def reset_system():
     """
     Deletes all state JSONs and clears database tables.
