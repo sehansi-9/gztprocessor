@@ -101,22 +101,22 @@ def load_initial_state_to_db(date_str: str):
         with get_connection() as conn:
             cur = conn.cursor()
 
-        for ministry in ministries:
-            cur.execute(
-                "INSERT INTO ministry (name, state_version) VALUES (?, ?)",
-                (ministry["name"], date_str),
-            )
-            ministry_id = cur.lastrowid
-
-            position = 1  # reset for each ministry
-            for dept in ministry["departments"]:
+            for ministry in ministries:
                 cur.execute(
-                    "INSERT INTO department (name, ministry_id, position, state_version) VALUES (?, ?, ?, ?)",
-                    (dept, ministry_id, position, date_str),
+                    "INSERT INTO ministry (name) VALUES (?)",
+                    (ministry["name"],),
                 )
-                position += 1
+                ministry_id = cur.lastrowid
 
-        conn.commit()
+                position = 1  # reset for each ministry
+                for dept in ministry["departments"]:
+                    cur.execute(
+                        "INSERT INTO department (name, ministry_id, position) VALUES (?, ?, ?)",
+                        (dept, ministry_id, position),
+                    )
+                    position += 1
+
+            conn.commit()
     except Exception as e:
         raise RuntimeError(f"Failed to insert initial state into database: {e}")
 
@@ -149,17 +149,14 @@ def export_state_snapshot(date_str: str):
         with get_connection() as conn:
             cur = conn.cursor()
 
-            # Get all ministries for this state
-            cur.execute(
-                "SELECT id, name FROM ministry WHERE state_version = ? ORDER BY id ASC",
-                (date_str,),
-            )
+            # Get all ministries (no filtering by state_version)
+            cur.execute("SELECT id, name FROM ministry ORDER BY id ASC")
             ministries = cur.fetchall()
 
             for ministry_id, ministry_name in ministries:
                 cur.execute(
-                    "SELECT name FROM department WHERE ministry_id = ? AND state_version = ? ORDER BY position ASC",
-                    (ministry_id, date_str),
+                    "SELECT name FROM department WHERE ministry_id = ? ORDER BY position ASC",
+                    (ministry_id,),
                 )
                 departments = [row[0] for row in cur.fetchall()]
                 snapshot["ministers"].append(
@@ -196,3 +193,5 @@ def clear_all_state_data():
         cur.execute("DELETE FROM ministry")
         conn.commit()
         print("Ministry and department tables cleared.")
+
+

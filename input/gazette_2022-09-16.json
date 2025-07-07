@@ -28,7 +28,8 @@
       "ministry_name": "Minister of Energy",
       "affected_column": "II",
       "details": [
-        "Inserted: item 4 — Ceylon Petroleum Corporation"
+        "Inserted: item 4 — Ceylon Petroleum Corporation",
+        "Inserted: item 8 — Department of Inland Revenue"
       ]
     },
     {
@@ -45,13 +46,7 @@
       "affected_column": "II",
       "details": [
         "Inserted: item 2 — Trade Union Relations Board",
-        "Inserted: item 3 — Occupational Safety and Health"
-      ]
-    },
-    {
-      "ministry_name": "Minister of Environment",
-      "affected_column": "II",
-      "details": [
+        "Inserted: item 3 — Occupational Safety and Health",
         "Inserted: item 4 — Mahaweli Authority"
       ]
     }
