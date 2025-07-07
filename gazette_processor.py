@@ -1,23 +1,25 @@
 from pathlib import Path
-import json
 import re
 from collections import defaultdict
 from db import get_connection
-from state_manager import get_latest_state_date
+import state_manager
+import utils
 
 INPUT_DIR = Path(__file__).resolve().parent / "input"
 
+def extract_initial_gazette_data(date_str: str) -> dict:
+    data = utils.load_gazette_data_from_JSON(date_str)
+    ministries = data.get(
+        "ministers", []
+    ) 
+    if not ministries:
+        raise ValueError(
+            f"No ministries found in input file for gazette_{date_str}.json"
+        )
+    return ministries
 
 def extract_column_II_department_changes(date_str: str,) -> tuple[list[dict], list[dict]]:
-    gazette_path = INPUT_DIR / f"gazette_{date_str}.json"
-    if not gazette_path.exists():
-        raise FileNotFoundError(f"Gazette file for {date_str} not found.")
-
-    try:
-        with open(gazette_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON format in {gazette_path}: {e}")
+    data = utils.load_gazette_data_from_JSON(date_str)
 
     adds = [e for e in data.get("ADD", []) if e.get("affected_column") == "II"]
     omits = [e for e in data.get("OMIT", []) if e.get("affected_column") == "II"]
@@ -203,7 +205,7 @@ def process_amendment_gazette(date_str: str) -> list[dict]:
         return
 
     try:
-        prev_date = get_latest_state_date()
+        prev_date = state_manager.get_latest_state_date()
     except FileNotFoundError:
         print(f" No previous state found for {date_str}. Cannot resolve changes.")
         return

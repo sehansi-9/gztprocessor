@@ -1,10 +1,10 @@
 # main.py
-import os
 from fastapi import FastAPI
 from pathlib import Path
 
 import state_manager
 import gazette_processor
+import database
 
 from db import init_db
 
@@ -44,29 +44,56 @@ def get_state_by_date(date: str):
         return {"error": f"State file for {date} not found."}
 
 
-#call this endpoint to create the first state from gazette JSON
-@app.post("/state/create/initial/{date}")
-def create_state_from_first_gazette(date: str):
+@app.get("/state/initial/{date}")
+def get_contents_of_initial_gazette(date: str):
     """
-    Trigger state creation from input/gazette_<date>.json 
+    Return the contents of the initial gazette file for a given date.
     """
     try:
-        state_manager.load_initial_state_to_db(date)
-        return {"message": f"State created for {date}"}
+        data = gazette_processor.extract_initial_gazette_data(date)
+        return data
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
 
-@app.post("/state/create/{date}")
+
+# TODO: this should accept a payload of ministries and departments from user after editing
+@app.post("/state/initial/{date}")
+def create_state_from_initial_gazette(date: str):
+    """
+    Trigger state creation for the initial gazette
+    """
+    try:
+        database.load_initial_state_to_db(date) # change this later to accept ministries and departments from user
+        return {"message": f"State created for initial gazette: {date}"}
+    except FileNotFoundError:
+        return {"error": f"Gazette input file for {date} not found."}
+
+
+@app.get("/state/amendment/{date}")
+def get_contents_of_amendment_gazette(date: str):
+    try:
+        transactions = gazette_processor.process_amendment_gazette(date)
+        return {
+            "message": f"Amendment processed for {date}",
+            "transactions": transactions,
+        }
+    except FileNotFoundError:
+        return {"error": f"Gazette input file for {date} not found."}
+
+
+# TODO: this should accept a payload of edited transactions from user
+@app.post("/state/amendment/{date}")
 def create_state_from_amendment(date: str):
     """
     Trigger processing of an amendment gazette and return the detected transactions.
     """
     try:
-        transactions = gazette_processor.process_amendment_gazette(date)
-        state_manager.apply_transactions_to_db(transactions, date)
+        transactions = gazette_processor.process_amendment_gazette(
+            date
+        )  # remove this part later as the user is providing the edited transactions
+        database.apply_transactions_to_db(transactions, date)
         return {
             "message": f"Amendment processed for {date}",
-            "transactions": transactions
         }
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
