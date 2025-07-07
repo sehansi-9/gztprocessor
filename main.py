@@ -1,5 +1,4 @@
 # main.py
-from ast import List
 from fastapi import FastAPI
 from pathlib import Path
 
@@ -25,7 +24,7 @@ def root():
     return {"message": "Gazette Processor backend running."}
 
 
-@app.get("/state/latest")
+@app.get("/mindep/state/latest")
 def get_latest_state():
     """
     Return the most recent state available and its date.
@@ -37,19 +36,31 @@ def get_latest_state():
         return {"error": "No state files found."}
 
 
-@app.get("/state/{date}")
+
+@app.get("/mindep/state/{date}")
 def get_state_by_date(date: str):
     """
     Load a state snapshot by date (YYYY-MM-DD)
     """
     try:
         state = state_manager.load_state(date)
-        return state
+        return {"date": date, "state": state}
+    except FileNotFoundError:
+        return {"error": "No state file found."}
+    
+
+@app.post("/mindep/state/{date}")
+def load_state_to_db_by_date(date: str):
+    """
+    Load a state snapshot to db
+    """
+    try:
+        state_manager.load_state_to_db(date)
     except FileNotFoundError:
         return {"error": f"State file for {date} not found."}
 
 
-@app.get("/state/initial/{date}")
+@app.get("/mindep/initial/{date}")
 def get_contents_of_initial_gazette(date: str):
     """
     Return the contents of the initial gazette file for a given date.
@@ -62,7 +73,7 @@ def get_contents_of_initial_gazette(date: str):
 
 
 
-@app.post("/state/initial/{date}")
+@app.post("/mindep/initial/{date}")
 def create_state_from_initial_gazette(date: str, ministries: List[dict] = Body(...)):
     """
     Trigger state creation for the initial gazette
@@ -74,8 +85,11 @@ def create_state_from_initial_gazette(date: str, ministries: List[dict] = Body(.
         return {"error": f"Gazette input file for {date} not found."}
 
 
-@app.get("/state/amendment/{date}")
+@app.get("/mindep/amendment/{date}")
 def get_contents_of_amendment_gazette(date: str):
+    """
+    Return the contents of the initial gazette file for a given date.
+    """
     try:
         transactions = gazette_processor.process_amendment_gazette(date)
         return {
@@ -86,7 +100,7 @@ def get_contents_of_amendment_gazette(date: str):
         return {"error": f"Gazette input file for {date} not found."}
 
 
-@app.post("/state/amendment/{date}")
+@app.post("/mindep/amendment/{date}")
 def create_state_from_amendment(date: str, transactions: List[dict] = Body(...)):
     """
     Trigger processing of an amendment gazette and return the detected transactions.

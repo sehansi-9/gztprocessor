@@ -11,18 +11,22 @@ def get_state_file_path(date_str: str) -> Path:
     return STATE_DIR / f"state_{date_str}.json"
 
 
-def load_state(date_str: str) -> dict:
+def load_state(date_str: str) -> tuple[str, dict]:
     """
-    Load a state snapshot by date (YYYY-MM-DD)
+    Load a state snapshot by date (YYYY-MM-DD).
+    Returns:
+        (date_str, state_dict)
     """
     path = get_state_file_path(date_str)
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            state_data = json.load(f)
+        return state_data
     except FileNotFoundError:
         raise FileNotFoundError(f"State file for {date_str} not found at {path}")
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON format in {path}: {e}")
+
 
 
 def get_latest_state() -> tuple[str, dict]:
@@ -107,6 +111,39 @@ def export_state_snapshot(date_str: str):
 
     except IOError as e:
         raise IOError(f"Failed to write state snapshot to {state_path}: {e}")
+
+def load_state_to_db(date_str: str):
+    """
+    Load a saved state snapshot from file into the database.
+    This will replace the current contents of the ministry and department tables.
+    """
+    state_data = load_state(date_str)
+    ministries = state_data.get("ministers", [])
+
+    if not ministries:
+        raise ValueError(f"No ministries found in state file for {date_str}")
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        # Clear existing data
+        cur.execute("DELETE FROM department")
+        cur.execute("DELETE FROM ministry")
+
+        for ministry in ministries:
+            cur.execute("INSERT INTO ministry (name) VALUES (?)", (ministry["name"],))
+            ministry_id = cur.lastrowid
+
+            for pos, dept in enumerate(ministry["departments"], start=1):
+                cur.execute(
+                    "INSERT INTO department (name, ministry_id, position) VALUES (?, ?, ?)",
+                    (dept, ministry_id, pos),
+                )
+
+        conn.commit()
+
+    print(f"Loaded state for {date_str} into the database.")
+
 
 def clear_all_state_data():
     """
