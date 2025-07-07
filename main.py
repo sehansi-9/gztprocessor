@@ -63,7 +63,7 @@ def create_state_from_amendment(date: str):
     """
     try:
         transactions = gazette_processor.process_amendment_gazette(date)
-        #state_manager.apply_transactions(transactions, date)
+        state_manager.apply_transactions_to_db(transactions, date)
         return {
             "message": f"Amendment processed for {date}",
             "transactions": transactions

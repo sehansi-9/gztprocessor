@@ -8,9 +8,7 @@ from state_manager import get_latest_state_date
 INPUT_DIR = Path(__file__).resolve().parent / "input"
 
 
-def extract_column_II_department_changes(
-    date_str: str,
-) -> tuple[list[dict], list[dict]]:
+def extract_column_II_department_changes(date_str: str,) -> tuple[list[dict], list[dict]]:
     gazette_path = INPUT_DIR / f"gazette_{date_str}.json"
     if not gazette_path.exists():
         raise FileNotFoundError(f"Gazette file for {date_str} not found.")
@@ -79,9 +77,7 @@ def extract_column_II_department_changes(
     return added_departments, removed_departments_raw
 
 
-def resolve_omitted_items(
-    removed_departments_raw: list[dict], previous_date: str
-) -> list[dict]:
+def resolve_omitted_items(removed_departments_raw: list[dict], previous_date: str) -> list[dict]:
     resolved = []
     try:
         with get_connection() as conn:
