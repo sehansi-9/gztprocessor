@@ -5,8 +5,6 @@ from db import get_connection
 import state_manager
 import utils
 
-INPUT_DIR = Path(__file__).resolve().parent / "input"
-
 def extract_initial_gazette_data(date_str: str) -> dict:
     data = utils.load_gazette_data_from_JSON(date_str)
     ministries = data.get(

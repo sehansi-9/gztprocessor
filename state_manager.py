@@ -28,7 +28,6 @@ def load_state(date_str: str) -> tuple[str, dict]:
         raise ValueError(f"Invalid JSON format in {path}: {e}")
 
 
-
 def get_latest_state() -> tuple[str, dict]:
     """
     Return (date_str, state_dict) of the most recent saved state.
