@@ -1,6 +1,11 @@
 # main.py
+from ast import List
 from fastapi import FastAPI
 from pathlib import Path
+
+from fastapi.params import Body
+from fastapi import FastAPI, Body
+from typing import List
 
 import state_manager
 import gazette_processor
@@ -56,14 +61,14 @@ def get_contents_of_initial_gazette(date: str):
         return {"error": f"Gazette input file for {date} not found."}
 
 
-# TODO: this should accept a payload of ministries and departments from user after editing
+
 @app.post("/state/initial/{date}")
-def create_state_from_initial_gazette(date: str):
+def create_state_from_initial_gazette(date: str, ministries: List[dict] = Body(...)):
     """
     Trigger state creation for the initial gazette
     """
     try:
-        database.load_initial_state_to_db(date) # change this later to accept ministries and departments from user
+        database.load_initial_state_to_db(date, ministries) 
         return {"message": f"State created for initial gazette: {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette input file for {date} not found."}
@@ -81,16 +86,12 @@ def get_contents_of_amendment_gazette(date: str):
         return {"error": f"Gazette input file for {date} not found."}
 
 
-# TODO: this should accept a payload of edited transactions from user
 @app.post("/state/amendment/{date}")
-def create_state_from_amendment(date: str):
+def create_state_from_amendment(date: str, transactions: List[dict] = Body(...)):
     """
     Trigger processing of an amendment gazette and return the detected transactions.
     """
     try:
-        transactions = gazette_processor.process_amendment_gazette(
-            date
-        )  # remove this part later as the user is providing the edited transactions
         database.apply_transactions_to_db(transactions, date)
         return {
             "message": f"Amendment processed for {date}",

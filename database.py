@@ -5,9 +5,7 @@ import utils
 import state_manager
 
 
-# TODO:
-# - Get ministries as a parameter instead of hardcoding
-def load_initial_state_to_db(date_str: str):
+def load_initial_state_to_db(date_str: str, ministries: list[dict]):
     """
     Load the first full structure into the database and save a state snapshot.
     Expects JSON format:
@@ -21,16 +19,6 @@ def load_initial_state_to_db(date_str: str):
     }
     Saves state to DB and also state/state_<date_str>.json
     """
-    data = utils.load_gazette_data_from_JSON(date_str)
-
-    ministries = data.get(
-        "ministers", []
-    )  # instead of these, get the ministries as a parameter
-    if not ministries:
-        raise ValueError(
-            f"No ministries found in input file for gazette_{date_str}.json"
-        )
-
     try:
         with get_connection() as conn:
             cur = conn.cursor()
