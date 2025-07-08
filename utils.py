@@ -15,7 +15,9 @@ def load_gazette_data_from_JSON(gazette_number: str, date_str: str) -> dict:
     - ministry-initial_2289-43_E_2022-07-22.json
     - ministry-amendment_2297-78_E_2022-09-16.json
     """
-    pattern = f"ministry-*_{gazette_number}_E_{date_str}.json"
+    date_underscored = date_str.replace("-", "_")
+
+    pattern = f"ministry-*_{gazette_number}_E_{date_underscored}.json"
     matching_files = list(INPUT_DIR.glob(pattern))
 
     if not matching_files:
