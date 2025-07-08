@@ -5,7 +5,7 @@ import utils
 import state_manager
 
 
-def load_initial_state_to_db(date_str: str, ministries: list[dict]):
+def load_initial_state_to_db(gazette_number: str, date_str: str, ministries: list[dict]):
     """
     Load the first full structure into the database and save a state snapshot.
     Expects JSON format:
@@ -46,12 +46,12 @@ def load_initial_state_to_db(date_str: str, ministries: list[dict]):
 
     # Export the inserted state back to a JSON file as a snapshot
     try:
-        state_manager.export_state_snapshot(date_str)
+        state_manager.export_state_snapshot(gazette_number, date_str)
     except Exception as e:
         raise RuntimeError(f"Failed to export state snapshot: {e}")
 
 
-def apply_transactions_to_db(transactions: list[dict], date_str: str):
+def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: list[dict]):
 
     with get_connection() as conn:
         cur = conn.cursor()
@@ -143,5 +143,5 @@ def apply_transactions_to_db(transactions: list[dict], date_str: str):
         print("DB updated with new positions")
 
     # Step 5: Export state snapshot
-    state_manager.export_state_snapshot(date_str)
+    state_manager.export_state_snapshot(gazette_number,date_str)
     print(f"Exported state snapshot for {date_str}")

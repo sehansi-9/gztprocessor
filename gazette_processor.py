@@ -5,19 +5,18 @@ from db import get_connection
 import state_manager
 import utils
 
-def extract_initial_gazette_data(date_str: str) -> dict:
-    data = utils.load_gazette_data_from_JSON(date_str)
-    ministries = data.get(
-        "ministers", []
-    ) 
+def extract_initial_gazette_data(gazette_number: str, date_str: str) -> dict:
+    data = utils.load_gazette_data_from_JSON(gazette_number, date_str)
+    ministries = data.get("ministers", [])
     if not ministries:
         raise ValueError(
-            f"No ministries found in input file for gazette_{date_str}.json"
+            f"No ministries found in input file for gazette {gazette_number} on {date_str}"
         )
     return ministries
 
-def extract_column_II_department_changes(date_str: str,) -> tuple[list[dict], list[dict]]:
-    data = utils.load_gazette_data_from_JSON(date_str)
+
+def extract_column_II_department_changes(gazette_number: str, date_str: str) -> tuple[list[dict], list[dict]]:
+    data = utils.load_gazette_data_from_JSON(gazette_number, date_str)
 
     adds = [e for e in data.get("ADD", []) if e.get("affected_column") == "II"]
     omits = [e for e in data.get("OMIT", []) if e.get("affected_column") == "II"]
@@ -77,7 +76,7 @@ def extract_column_II_department_changes(date_str: str,) -> tuple[list[dict], li
     return added_departments, removed_departments_raw
 
 
-def resolve_omitted_items(removed_departments_raw: list[dict], previous_date: str) -> list[dict]:
+def resolve_omitted_items(removed_departments_raw: list[dict], previous_gazette_number: str, previous_date: str) -> list[dict]:
     resolved = []
     try:
         with get_connection() as conn:
@@ -90,7 +89,7 @@ def resolve_omitted_items(removed_departments_raw: list[dict], previous_date: st
                 result = cur.fetchone()
                 if not result:
                     print(
-                        f"⚠️ Ministry '{ministry}' not found in DB (for {previous_date})"
+                        f"⚠️ Ministry '{ministry}' not found in DB (for gazette {previous_gazette_number} on {previous_date})"
                     )
                     continue
                 ministry_id = result[0]
@@ -112,7 +111,7 @@ def resolve_omitted_items(removed_departments_raw: list[dict], previous_date: st
                             )
                         else:
                             print(
-                                f"⚠️ No department at position {pos} under {ministry} (on {previous_date})"
+                                f"⚠️ No department at position {pos} under {ministry} (gazette {previous_gazette_number} on {previous_date})"
                             )
 
                 elif "omitted_names" in entry:
@@ -195,20 +194,20 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
     return transactions
 
 
-def process_amendment_gazette(date_str: str) -> list[dict]:
+def process_amendment_gazette(gazette_number: str, date_str: str) -> list[dict]:
     try:
-        added, removed_raw = extract_column_II_department_changes(date_str)
+        added, removed_raw = extract_column_II_department_changes(gazette_number, date_str)
     except ValueError as e:
-        print(f" Failed to extract column II changes {date_str}: {e}")
-        return
+        print(f" Failed to extract column II changes for gazette {gazette_number} on {date_str}: {e}")
+        return []
 
     try:
-        prev_date = state_manager.get_latest_state_date()
+        prev_gazette_number, prev_date = state_manager.get_latest_state_date()
     except FileNotFoundError:
-        print(f" No previous state found for {date_str}. Cannot resolve changes.")
-        return
+        print(f" No previous state found for gazette {gazette_number} on {date_str}. Cannot resolve changes.")
+        return []
 
-    resolved_removed = resolve_omitted_items(removed_raw, prev_date)
+    resolved_removed = resolve_omitted_items(removed_raw, prev_gazette_number, prev_date)
     transactions = classify_department_changes(added, resolved_removed)
 
     return transactions

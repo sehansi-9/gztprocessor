@@ -15,7 +15,7 @@ This FastAPI backend processes government gazette data to track structural chang
 ├── gazette_processor.py    # Core logic to classify ADD/OMIT into transactions
 ├── state_manager.py        # Manage loading/saving versioned state snapshots
 ├── state/                  # Folder storing versioned state JSONs
-└── input/                  # Folder storing gazette input files (by date)
+└── input/                  # Folder storing gazette input files (by date & gazette number)
 ```
 
 ---
@@ -52,7 +52,7 @@ This FastAPI backend processes government gazette data to track structural chang
 
 ### Initial Gazette
 
-For `/mindep/initial/{date}`:
+For `/mindep/initial/{date}/{gazette_number}`:
 
 ```json
 {
@@ -67,7 +67,7 @@ For `/mindep/initial/{date}`:
 
 ### Amendment Gazette
 
-For `/mindep/amendment/{date}`:
+For `/mindep/amendment/{date}/{gazette_number}`:
 
 ```json
 {
@@ -93,9 +93,9 @@ For `/mindep/amendment/{date}`:
 ## How It Works
 
 1. You load the **initial state** from an input file.
-2. The program sends the tabular content for review in GET by date
+2. The program sends the tabular content for review in GET by date and gazette number
 3. Send the request body after reviewing to create initial state
-4. GET the first amendment transactions with the detected compound transactions like MOVE, by date
+4. GET the first amendment transactions with the detected compound transactions like MOVE, by date and gazette number
 5. Review and send the payload to update the state
 6. Continue with the second amendment
 7. Each **amendment** is compared to the previous state to detect:
@@ -111,29 +111,30 @@ For `/mindep/amendment/{date}`:
 
 ###  State
 
-| Endpoint               | Method | Description                  |
-| ---------------------- | ------ | ---------------------------- |
-| `/mindep/state/latest` | `GET`  | Get the latest saved state   |
-| `/mindep/state/{date}` | `GET`  | Get a specific state by date |
-| `/mindep/state/{date}` | `POST` | Load state snapshot into DB  |
+| Endpoint                                         | Method | Description                                                      |
+| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `/mindep/state/latest`                           | `GET`  | Get the latest saved state (with gazette number and date)        |
+| `/mindep/state/{date}`                           | `GET`  | Get state(s) for a specific date; returns gazette numbers if multiple |
+| `/mindep/state/{date}/{gazette_number}`          | `GET`  | Get a specific state by date and gazette number                  |
+| `/mindep/state/{date}/{gazette_number}`          | `POST` | Load state snapshot into DB for a specific date and gazette      |
 
 ---
 
 ### Initial Gazette
 
-| Endpoint                 | Method | Description                                |
-| ------------------------ | ------ | ------------------------------------------ |
-| `/mindep/initial/{date}` | `GET`  | Preview contents of initial gazette (what is sent to user for review for initial gazette)      |
-| `/mindep/initial/{date}` | `POST` | Create initial state in DB & save snapshot (what is sent by the user after reviewing, editing etc - get the sample initial payload from request_body directory) )|
+| Endpoint                                         | Method | Description                                                      |
+| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `/mindep/initial/{date}/{gazette_number}`        | `GET`  | Preview contents of initial gazette for a date and gazette number|
+| `/mindep/initial/{date}/{gazette_number}`        | `POST` | Create initial state in DB & save snapshot (see request_body dir to get sample initial gazette payload)|
 
 ---
 
 ### Amendment Gazette
 
-| Endpoint                   | Method | Description                                   |
-| -------------------------- | ------ | --------------------------------------------- |
-| `/mindep/amendment/{date}` | `GET`  | Detect transactions from amendment  (what is sent to user for review for amendment gazette)          |
-| `/mindep/amendment/{date}` | `POST` | Apply confirmed transactions to DB & snapshot (what is sent by the user after reviewing, editing etc - get the sample ammendment payloads from request_body directory) |
+| Endpoint                                         | Method | Description                                                      |
+| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `/mindep/amendment/{date}/{gazette_number}`      | `GET`  | Detect transactions from amendment for a date and gazette number |
+| `/mindep/amendment/{date}/{gazette_number}`      | `POST` | Apply confirmed transactions to DB & snapshot (see request_body dir to get sample amendment payloads) |
 
 ---
 
@@ -174,7 +175,7 @@ Each state file looks like:
 }
 ```
 
-Saved as `state/state_YYYY-MM-DD.json`.
+Saved as `state/state_{gazette_number}_{YYYY-MM-DD}.json`.
 
 ---
 
@@ -190,12 +191,12 @@ Saved as `state/state_YYYY-MM-DD.json`.
 ##  Testing
 
 Use `curl` or Postman to test endpoints. 
-See input files to get the dates.
+See input files to get the dates and gazette numbers.
 
 Example:
 
 ```bash
-curl http://127.0.0.1:8000/mindep/amendment/2022-10-08
+curl http://127.0.0.1:8000/mindep/amendment/2022-09-16/2297-78
 ```
 
 ---
