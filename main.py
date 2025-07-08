@@ -9,6 +9,7 @@ from typing import List
 import state_manager
 import gazette_processor
 import database
+import csv_writer
 
 from db import init_db
 
@@ -108,6 +109,7 @@ def create_state_from_initial_gazette(gazette_number: str, date: str, ministries
     """
     try:
         database.load_initial_state_to_db(gazette_number, date, ministries)
+        csv_writer.generate_initial_add_csv(gazette_number, date, ministries)
         return {"message": f"State created for initial gazette {gazette_number} on {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
@@ -136,6 +138,7 @@ def create_state_from_amendment_gazette(gazette_number: str, date: str, transact
     """
     try:
         database.apply_transactions_to_db(gazette_number, date, transactions)
+        csv_writer.generate_amendment_csvs(gazette_number, date, transactions)
         return {"message": f"State updated for amendment gazette {gazette_number} on {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
