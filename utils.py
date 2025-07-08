@@ -15,14 +15,16 @@ def load_gazette_data_from_JSON(gazette_number: str, date_str: str) -> dict:
     - ministry-initial_2289-43_E_2022-07-22.json
     - ministry-amendment_2297-78_E_2022-09-16.json
     """
-    date_underscored = date_str.replace("-", "_")
+    expected_suffix = f"{gazette_number}_E_{date_str}.json"
 
-    pattern = f"ministry-*_{gazette_number}_E_{date_underscored}.json"
-    matching_files = list(INPUT_DIR.glob(pattern))
+    matching_files = [
+        f for f in INPUT_DIR.iterdir()
+        if f.is_file() and f.name.endswith(expected_suffix) and f.name.startswith("ministry-")
+    ]
 
     if not matching_files:
         raise FileNotFoundError(
-            f"No gazette file found for gazette {gazette_number} and date {date_str} in {INPUT_DIR}"
+            f"Gazette file for {gazette_number}, {date_str} not found."
         )
 
     if len(matching_files) > 1:
