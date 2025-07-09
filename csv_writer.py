@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 
 def generate_initial_add_csv(gazette_number: str, date_str: str, structure: list[dict]):
-    output_dir = Path("output") / date_str / gazette_number
+    output_dir = Path("output") / "mindep"/ date_str / gazette_number
     output_dir.mkdir(parents=True, exist_ok=True)
 
     csv_path = output_dir / "add.csv"
@@ -55,7 +55,7 @@ def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: li
     - ADD, TERMINATE: transaction_id,parent,parent_type,child,child_type,rel_type,date
     - MOVE: transaction_id,old_parent,new_parent,child,type,date
     """
-    output_dir = Path("output") / date_str / gazette_number
+    output_dir = Path("output") / "mindep"/  date_str / gazette_number
     output_dir.mkdir(parents=True, exist_ok=True)
 
     add_rows = []

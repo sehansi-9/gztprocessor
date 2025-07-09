@@ -1,11 +1,10 @@
 # state_manager.py
 import json
 from pathlib import Path
-from datetime import date
-from typing import List, Dict
-from db import get_connection
+from db_connections.db_gov import get_connection
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATE_DIR = PROJECT_ROOT / "state" / "mindep"
 
 def get_state_file_path(gazette_number: str, date_str: str) -> Path:
     return STATE_DIR / f"state_{gazette_number}_{date_str}.json"

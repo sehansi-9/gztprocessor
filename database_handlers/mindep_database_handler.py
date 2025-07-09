@@ -1,8 +1,6 @@
-from pathlib import Path
-from db import get_connection
+from db_connections.db_gov import get_connection
 from collections import defaultdict
-import utils
-import state_manager
+import state_managers.mindep_state_manager as mindep_state_manager
 
 
 def load_initial_state_to_db(gazette_number: str, date_str: str, ministries: list[dict]):
@@ -46,7 +44,7 @@ def load_initial_state_to_db(gazette_number: str, date_str: str, ministries: lis
 
     # Export the inserted state back to a JSON file as a snapshot
     try:
-        state_manager.export_state_snapshot(gazette_number, date_str)
+        mindep_state_manager.export_state_snapshot(gazette_number, date_str)
     except Exception as e:
         raise RuntimeError(f"Failed to export state snapshot: {e}")
 
@@ -143,5 +141,5 @@ def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: l
         print("DB updated with new positions")
 
     # Step 5: Export state snapshot
-    state_manager.export_state_snapshot(gazette_number,date_str)
+    mindep_state_manager.export_state_snapshot(gazette_number,date_str)
     print(f"Exported state snapshot for {date_str}")

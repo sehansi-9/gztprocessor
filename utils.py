@@ -1,8 +1,7 @@
 import json
 from pathlib import Path
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
-INPUT_DIR = Path(__file__).resolve().parent / "input"
+MINDEP_INPUT_DIR = Path(__file__).resolve().parent / "input" / "mindep"
 
 def load_gazette_data_from_JSON(gazette_number: str, date_str: str) -> dict:
     """
@@ -18,7 +17,7 @@ def load_gazette_data_from_JSON(gazette_number: str, date_str: str) -> dict:
     expected_suffix = f"{gazette_number}_E_{date_str}.json"
 
     matching_files = [
-        f for f in INPUT_DIR.iterdir()
+        f for f in MINDEP_INPUT_DIR.iterdir()
         if f.is_file() and f.name.endswith(expected_suffix) and f.name.startswith("ministry-")
     ]
 

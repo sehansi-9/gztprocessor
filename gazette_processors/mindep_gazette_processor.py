@@ -1,8 +1,8 @@
 from pathlib import Path
 import re
 from collections import defaultdict
-from db import get_connection
-import state_manager
+from db_connections.db_gov import get_connection
+import state_managers.mindep_state_manager as mindep_state_manager
 import utils
 
 def extract_initial_gazette_data(gazette_number: str, date_str: str) -> dict:
@@ -202,7 +202,7 @@ def process_amendment_gazette(gazette_number: str, date_str: str) -> list[dict]:
         return []
 
     try:
-        prev_gazette_number, prev_date = state_manager.get_latest_state_date()
+        prev_gazette_number, prev_date = mindep_state_manager.get_latest_state_date()
     except FileNotFoundError:
         print(f" No previous state found for gazette {gazette_number} on {date_str}. Cannot resolve changes.")
         return []
