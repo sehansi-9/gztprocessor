@@ -13,8 +13,15 @@ def load_gazette_data_from_JSON(gazette_number: str, date_str: str) -> dict:
     Example:
     - ministry-initial_2289-43_E_2022-07-22.json
     - ministry-amendment_2297-78_E_2022-09-16.json
+
+    Note: date_str passed with hyphens ('YYYY-MM-DD') will be
+    converted to underscores to match filenames.
     """
-    expected_suffix = f"{gazette_number}_E_{date_str}.json"
+
+    # Convert hyphens to underscores so "2022-07-22" matches "2022_07_22"
+    normalized_date_str = date_str.replace("-", "_")
+
+    expected_suffix = f"{gazette_number}_E_{normalized_date_str}.json"
 
     matching_files = [
         f for f in MINDEP_INPUT_DIR.iterdir()
