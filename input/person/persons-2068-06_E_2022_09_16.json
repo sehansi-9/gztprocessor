@@ -1,0 +1,72 @@
+{
+  "ADD": [
+    {
+      "name": "Hon. Daya Gamage",
+      "Ministry": "Ministry of Youth Affairs and Southern Development",
+      "date": "2018-06-20",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Harin Fernando",
+      "Ministry": "Ministry of Telecommunications and Digital Infrastructure",
+      "date": "2018-06-20",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Palitha Range Bandara",
+      "Ministry": "Ministry of Irrigation and Water Resources Management",
+      "date": "2018-06-20",
+      "position": "State Minister"
+    },
+    {
+      "name": "Hon. J.C. Alawathuwala",
+      "Ministry": "Ministry of Environment",
+      "date": "2018-06-20",
+      "position": "State Minister"
+    },
+    {
+      "name": "Hon. Anoma Gamage",
+      "Ministry": "Ministry of Agriculture",
+      "date": "2018-06-20",
+      "position": "Deputy Minister"
+    },
+    {
+      "name": "Hon. H.M.M. Harees",
+      "Ministry": "Ministry of Education",
+      "date": "2018-06-20",
+      "position": "Deputy Minister"
+    }
+  ],
+  "TERMINATE": [
+    {
+      "name": "Hon. Malik Samarawickrema",
+      "Ministry": "Ministry of Labour, Trade Union Relations and Sabaragamu Development",
+      "date": "2018-06-20",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Faiszer Musthapha",
+      "Ministry": "Ministry of Sports",
+      "date": "2018-06-20",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Vijayakala Maheswaran",
+      "Ministry": "Ministry of Child Affairs",
+      "date": "2018-06-20",
+      "position": "State Minister"
+    },
+    {
+      "name": "Hon. Ranjan Ramanayake",
+      "Ministry": "Ministry of Skills Development and Vocational Training",
+      "date": "2018-06-20",
+      "position": "Deputy Minister"
+    },
+    {
+      "name": "Hon. A.H.M. Fowzie",
+      "Ministry": "Ministry of Disaster Management",
+      "date": "2018-06-20",
+      "position": "Deputy Minister"
+    }
+  ]
+}
