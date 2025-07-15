@@ -7,75 +7,15 @@ from state_managers.mindep_state_manager import MindepStateManager
 import gazette_processors.mindep_gazette_processor as mindep_gazette_processor
 import database_handlers.mindep_database_handler as mindep_database
 import csv_writer
+from routes.state_router import create_state_routes
 
-router = APIRouter()
+mindep_router = APIRouter()
 mindep_state_manager = MindepStateManager()
 
-@router.get("/mindep/state/latest")
-def get_latest_state():
-    """
-    Return the most recent state available with gazette number and date.
-    """
-    try:
-        gazette_number, date_str, state = mindep_state_manager.get_latest_state()
-        return {
-            "gazette_number": gazette_number,
-            "date": date_str,
-            "state": state
-        }
-    except FileNotFoundError:
-        return {"error": "No state files found."}
-    except ValueError as e:
-        return {"error": str(e)}
-
-@router.get("/mindep/state/{date}")
-def get_state_by_date(date: str):
-    """
-    If one state exists on the given date, return its state and gazette number.
-    If multiple exist, return a list of gazette numbers for that date.
-    """
-    try:
-        result = mindep_state_manager.get_state_by_date(date)
-
-        if isinstance(result, dict):
-            return {
-                "gazette_number": result["gazette_number"],
-                "date": date,
-                "state": result["state"]
-            }
-
-        return {
-            "date": date,
-            "multiple_gazettes": True,
-            "gazette_numbers": result
-        }
-
-    except FileNotFoundError:
-        return {"error": f"No state found for date {date}"}
-    except ValueError as e:
-        return {"error": str(e)}
+mindep_router.include_router(create_state_routes("mindep", mindep_state_manager))
 
 
-
-@router.get("/mindep/state/{date}/{gazette_number}")
-def get_state_by_gazette_and_date(gazette_number: str, date: str):
-    try:
-        state = mindep_state_manager.load_state(gazette_number, date)
-        return {"gazette_number": gazette_number, "date": date, "state": state}
-    except FileNotFoundError:
-        return {"error": "No state file found."}
-    
-
-@router.post("/mindep/state/{date}/{gazette_number}")
-def load_state_to_db_by_gazette_and_date(gazette_number: str, date: str):
-    try:
-        mindep_state_manager.load_state_to_db(gazette_number, date)
-        return {"message": f"Loaded state for gazette {gazette_number} on {date} to DB"}
-    except FileNotFoundError:
-        return {"error": f"State file for gazette {gazette_number} on {date} not found."}
-
-
-@router.get("/mindep/initial/{date}/{gazette_number}")
+@mindep_router.get("/mindep/initial/{date}/{gazette_number}")
 def get_contents_of_initial_gazette(gazette_number: str, date: str):
     """
     Return contents of the initial gazette for given gazette number and date.
@@ -88,7 +28,7 @@ def get_contents_of_initial_gazette(gazette_number: str, date: str):
 
 
 
-@router.post("/mindep/initial/{date}/{gazette_number}")
+@mindep_router.post("/mindep/initial/{date}/{gazette_number}")
 def create_state_from_initial_gazette(gazette_number: str, date: str, ministries: List[dict] = Body(...)):
     """
     Load ministries to DB and save state snapshot for initial gazette.
@@ -102,7 +42,7 @@ def create_state_from_initial_gazette(gazette_number: str, date: str, ministries
 
 
 
-@router.get("/mindep/amendment/{date}/{gazette_number}")
+@mindep_router.get("/mindep/amendment/{date}/{gazette_number}")
 def get_contents_of_amendment_gazette(gazette_number: str, date: str):
     """
     Return the predicted transactions from the amendment gazette.
@@ -117,7 +57,7 @@ def get_contents_of_amendment_gazette(gazette_number: str, date: str):
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
 
 
-@router.post("/mindep/amendment/{date}/{gazette_number}")
+@mindep_router.post("/mindep/amendment/{date}/{gazette_number}")
 def create_state_from_amendment_gazette(gazette_number: str, date: str, transactions: List[dict] = Body(...)):
     """
     Apply user-reviewed transactions and save new state snapshot.
@@ -128,12 +68,3 @@ def create_state_from_amendment_gazette(gazette_number: str, date: str, transact
         return {"message": f"State updated for amendment gazette {gazette_number} on {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
-
-
-@router.delete("/mindep/reset")
-def reset_system():
-    """
-    Deletes all state JSONs and clears database tables.
-    """
-    mindep_state_manager.clear_all_state_data()
-    return {"message": "System reset: all state files deleted and database cleared."}

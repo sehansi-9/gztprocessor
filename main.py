@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 
 from db_connections.db_gov import init_db
-from routes.mindep_router import router as mindep_router
+from routes.mindep_router import mindep_router
 
 if __name__ == "__main__":
     init_db()
