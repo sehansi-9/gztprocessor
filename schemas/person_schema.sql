@@ -1,13 +1,14 @@
 DROP TABLE IF EXISTS person;
-DROP TABLE IF EXISTS ministry;
+DROP TABLE IF EXISTS portfolio;
 
 CREATE TABLE person (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
 );
 
-CREATE TABLE ministry (
+CREATE TABLE portfolio (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    position TEXT NOT NULL,
     FOREIGN KEY(person_id) REFERENCES person(id)
 );

@@ -1,7 +1,8 @@
 from db_connections.db_gov import get_connection
 from collections import defaultdict
-import state_managers.mindep_state_manager as mindep_state_manager
+from state_managers.mindep_state_manager import MindepStateManager
 
+mindep_state_manager = MindepStateManager()
 
 def load_initial_state_to_db(gazette_number: str, date_str: str, ministries: list[dict]):
     """

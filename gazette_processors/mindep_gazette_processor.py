@@ -2,11 +2,13 @@ from pathlib import Path
 import re
 from collections import defaultdict
 from db_connections.db_gov import get_connection
-import state_managers.mindep_state_manager as mindep_state_manager
+from state_managers.mindep_state_manager import MindepStateManager
 import utils
 
+mindep_state_manager = MindepStateManager()
+
 def extract_initial_gazette_data(gazette_number: str, date_str: str) -> dict:
-    data = utils.load_gazette_data_from_JSON(gazette_number, date_str)
+    data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date_str)
     ministries = data.get("ministers", [])
     if not ministries:
         raise ValueError(
@@ -16,7 +18,7 @@ def extract_initial_gazette_data(gazette_number: str, date_str: str) -> dict:
 
 
 def extract_column_II_department_changes(gazette_number: str, date_str: str) -> tuple[list[dict], list[dict]]:
-    data = utils.load_gazette_data_from_JSON(gazette_number, date_str)
+    data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date_str)
 
     adds = [e for e in data.get("ADD", []) if e.get("affected_column") == "II"]
     omits = [e for e in data.get("OMIT", []) if e.get("affected_column") == "II"]

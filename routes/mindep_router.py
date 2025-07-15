@@ -3,13 +3,13 @@ from fastapi import APIRouter, Body
 from fastapi.params import Body
 from typing import List
 
-import state_managers.mindep_state_manager as mindep_state_manager
+from state_managers.mindep_state_manager import MindepStateManager
 import gazette_processors.mindep_gazette_processor as mindep_gazette_processor
 import database_handlers.mindep_database_handler as mindep_database
 import csv_writer
 
 router = APIRouter()
-
+mindep_state_manager = MindepStateManager()
 
 @router.get("/mindep/state/latest")
 def get_latest_state():
