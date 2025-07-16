@@ -21,3 +21,5 @@ venv/
 *.db
 *.egg-info/
 *.egg
+
+*.csv

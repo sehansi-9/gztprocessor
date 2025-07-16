@@ -127,12 +127,15 @@ def resolve_omitted_items(removed_departments_raw: list[dict], previous_gazette_
     return resolved
 
 
-def classify_department_changes(added: list[dict], removed: list[dict]) -> list[dict]:
+def classify_department_changes(added: list[dict], removed: list[dict]) -> dict:
     def normalize(name: str) -> str:
         return name.strip().lower()
 
-    transactions = []
+    moves = []
+    adds_list = []
+    terminates = []
     added_map = {}
+
     for item in added:
         for dept_entry in item["departments"]:
             raw_name = dept_entry["name"]
@@ -154,7 +157,7 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
     for dept, from_min in removed_map.items():
         if dept in added_map:
             to_entry = added_map[dept]
-            transactions.append(
+            moves.append(
                 {
                     "type": "MOVE",
                     "department": to_entry["original_name"],
@@ -164,14 +167,12 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
                 }
             )
             processed.add(dept)
-            print(
-                f"- MOVE detected: {to_entry['original_name']} from {from_min} → {to_entry['ministry']}"
-            )
+            print(f"- MOVE detected: {to_entry['original_name']} from {from_min} → {to_entry['ministry']}")
 
     print("\n Remaining ADDs...")
     for dept, to_entry in added_map.items():
         if dept not in processed:
-            transactions.append(
+            adds_list.append(
                 {
                     "type": "ADD",
                     "department": to_entry["original_name"],
@@ -184,7 +185,7 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
     print("\n Remaining TERMINATEs...")
     for dept, from_min in removed_map.items():
         if dept not in processed:
-            transactions.append(
+            terminates.append(
                 {
                     "type": "TERMINATE",
                     "department": dept.title(),
@@ -193,7 +194,14 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> list[
             )
             print(f"- TERMINATE: {dept.title()} from {from_min}")
 
-    return transactions
+    return {
+        "transactions": {
+            "moves": moves,
+            "adds": adds_list,
+            "terminates": terminates
+        }
+    }
+
 
 
 def process_amendment_gazette(gazette_number: str, date_str: str) -> list[dict]:

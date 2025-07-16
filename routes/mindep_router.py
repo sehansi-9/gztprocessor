@@ -49,20 +49,23 @@ def get_contents_of_amendment_gazette(gazette_number: str, date: str):
     """
     try:
         transactions = mindep_gazette_processor.process_amendment_gazette(gazette_number, date)
-        return {
-            "message": f"Amendment processed for {gazette_number} on {date}",
-            "transactions": transactions,
-        }
+        return transactions
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
 
 
 @mindep_router.post("/mindep/amendment/{date}/{gazette_number}")
-def create_state_from_amendment_gazette(gazette_number: str, date: str, transactions: List[dict] = Body(...)):
+def create_state_from_amendment_gazette(gazette_number: str, date: str, transactions: dict = Body(...)):
     """
     Apply user-reviewed transactions and save new state snapshot.
     """
     try:
+        transactions = transactions.get("transactions", {})
+        transactions = (
+            transactions.get("moves", []) +
+            transactions.get("adds", []) +
+            transactions.get("terminates", [])
+        )
         mindep_database.apply_transactions_to_db(gazette_number, date, transactions)
         csv_writer.generate_amendment_csvs(gazette_number, date, transactions)
         return {"message": f"State updated for amendment gazette {gazette_number} on {date}"}
