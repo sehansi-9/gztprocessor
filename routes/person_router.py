@@ -21,10 +21,7 @@ def get_contents_of_person_gazette(gazette_number: str, date: str):
     """
     try:
         transactions = person_gazette_processor.process_person_gazette(gazette_number, date)
-        return {
-            "message": f"Amendment processed for {gazette_number} on {date}",
-            "transactions": transactions,
-        }
+        return transactions
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
 

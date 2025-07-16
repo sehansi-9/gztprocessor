@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS person;
 DROP TABLE IF EXISTS portfolio;
+DROP TABLE IF EXISTS person;
 
 CREATE TABLE person (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -10,5 +10,6 @@ CREATE TABLE portfolio (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     position TEXT NOT NULL,
+    person_id INTEGER, 
     FOREIGN KEY(person_id) REFERENCES person(id)
 );
