@@ -5,7 +5,6 @@ from state_managers.person_state_manager import PersonStateManager
 person_state_manager = PersonStateManager()
 
 def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: dict):
-    from collections import defaultdict
     txs = transactions.get("transactions", transactions)
 
     with get_connection() as conn:
