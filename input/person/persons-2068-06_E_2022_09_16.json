@@ -1,72 +1,54 @@
 {
   "ADD": [
     {
-      "name": "Hon. Daya Gamage",
-      "Ministry": "Ministry of Youth Empowerment & Southern Dev.",
-      "date": "2018-06-20",
+      "name": "Hon. Kabir Hashim",
+      "Ministry": "Ministry of Roads and Highways",
+      "date": "2018-07-15",
       "position": "Minister"
     },
     {
       "name": "Hon. Harin Fernando",
-      "Ministry": "Ministry of Digital Infrastructure & Telecom",
-      "date": "2018-06-20",
+      "Ministry": "Ministry of Digital Infrastructure",
+      "date": "2018-07-15",
       "position": "Minister"
     },
     {
-      "name": "Hon. Palitha Range Bandara",
-      "Ministry": "Ministry of Irrigation & Water Management",
-      "date": "2018-06-20",
+      "name": "Hon. P. Harrison",
+      "Ministry": "Ministry of Social Welfare",
+      "date": "2018-07-15",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Ranjith Madduma Bandara",
+      "Ministry": "Ministry of Labour",
+      "date": "2018-07-15",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Thalatha Atukorale",
+      "Ministry": "Ministry of Justice",
+      "date": "2018-07-15",
+      "position": "Minister"
+    },
+    {
+      "name": "Hon. Vijayakala Maheswaran",
+      "Ministry": "Ministry of Women and Child Affairs",
+      "date": "2018-07-15",
       "position": "State Minister"
-    },
-    {
-      "name": "Hon. J.C. Alawathuwala",
-      "Ministry": "Ministry for the Environment",
-      "date": "2018-06-20",
-      "position": "State Minister"
-    },
-    {
-      "name": "Hon. Anoma Gamage",
-      "Ministry": "Agriculture Ministry",
-      "date": "2018-06-20",
-      "position": "Deputy Minister"
-    },
-    {
-      "name": "Hon. H.M.M. Harees",
-      "Ministry": "Ministry of National Education",
-      "date": "2018-06-20",
-      "position": "Deputy Minister"
     }
   ],
   "TERMINATE": [
     {
       "name": "Hon. Malik Samarawickrema",
       "Ministry": "Ministry of Labour, Trade Union Relations and Sabaragamu Development",
-      "date": "2018-06-20",
+      "date": "2018-07-15",
       "position": "Minister"
     },
     {
-      "name": "Hon. Faiszer Musthapha",
-      "Ministry": "Ministry of Sports",
-      "date": "2018-06-20",
+      "name": "Hon. Thalatha Atukorale",
+      "Ministry": "Ministry of Justice and Prison Reforms",
+      "date": "2018-07-15",
       "position": "Minister"
-    },
-    {
-      "name": "Hon. Vijayakala Maheswaran",
-      "Ministry": "Ministry of Child Affairs",
-      "date": "2018-06-20",
-      "position": "State Minister"
-    },
-    {
-      "name": "Hon. Ranjan Ramanayake",
-      "Ministry": "Ministry of Skills Development and Vocational Training",
-      "date": "2018-06-20",
-      "position": "Deputy Minister"
-    },
-    {
-      "name": "Hon. A.H.M. Fowzie",
-      "Ministry": "Ministry of Disaster Management",
-      "date": "2018-06-20",
-      "position": "Deputy Minister"
     }
   ]
 }
