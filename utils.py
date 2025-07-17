@@ -35,7 +35,7 @@ def load_mindep_gazette_data_from_JSON(gazette_number: str, date_str: str) -> di
         )
 
     if len(matching_files) > 1:
-        print(f"⚠️ Multiple gazette files found, using the first one: {matching_files[0].name}")
+        print(f"Multiple gazette files found, using the first one: {matching_files[0].name}")
 
     json_path = matching_files[0]
     try:

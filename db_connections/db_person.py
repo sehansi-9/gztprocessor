@@ -6,7 +6,6 @@ DB_PATH = BASE_DIR / "person.db"
 SCHEMA_PATH = BASE_DIR / "schemas" / "person_schema.sql"
 
 def get_connection():
-    print(f"Connecting to person database at {DB_PATH}")
     return sqlite3.connect(DB_PATH)
 
 def init_db():

@@ -25,6 +25,7 @@ def get_fuzzy_matches_for_ministry(ministry_name: str, threshold=70) -> list[dic
     """
     matches = []
     cleaned_target = clean_ministry_name(ministry_name)
+    target_tokens = set(cleaned_target.split())
 
     with get_connection() as conn:
         cur = conn.cursor()
@@ -43,9 +44,11 @@ def get_fuzzy_matches_for_ministry(ministry_name: str, threshold=70) -> list[dic
 
         for db_name, db_position, db_person in db_ministries:
             cleaned_db_name = clean_ministry_name(db_name)
+            db_tokens = set(cleaned_db_name.split())
             score = fuzz.token_sort_ratio(cleaned_target, cleaned_db_name)
+            word_overlap = len(target_tokens & db_tokens)
 
-            if score >= threshold:
+            if score >= threshold or word_overlap >= 1:
                 matches.append(
                     {
                         "existing_ministry": db_name,
@@ -74,6 +77,17 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
         terminate_entry = terminates_by_name[name]
         used_terminate_names.add(name)
 
+        raw_suggestions = get_fuzzy_matches_for_ministry(
+            add_entry.get("Ministry", ""), threshold=70
+        )
+
+        filtered_suggestions = [
+            suggestion
+            for suggestion in raw_suggestions
+            if suggestion["existing_ministry"] != terminate_entry.get("Ministry")
+            or suggestion["existing_position"] != terminate_entry.get("position")
+        ]
+
         moves.append(
             {
                 "type": "MOVE",
@@ -83,9 +97,7 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
                 "to_ministry": add_entry.get("Ministry"),
                 "to_position": add_entry.get("position"),
                 "date": add_entry.get("date"),
-                "suggested_terminates": get_fuzzy_matches_for_ministry(
-                    add_entry.get("Ministry", ""), threshold=70
-                ),
+                "suggested_terminates": filtered_suggestions,
             }
         )
 
