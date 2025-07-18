@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-import json
-
 class AbstractStateManager(ABC):
     def __init__(self, state_dir: Path):
         self.state_dir = state_dir

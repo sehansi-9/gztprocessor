@@ -72,6 +72,7 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
     data = load_person_gazette_data_from_JSON(gazette_number, date_str)
     adds = data.get("ADD", [])
     terminates = data.get("TERMINATE", [])
+    renames = data.get("RENAME", [])
 
     adds_by_name = {entry["name"]: entry for entry in adds}
     terminates_by_name = {entry["name"]: entry for entry in terminates}
@@ -142,5 +143,15 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
             "moves": moves,
             "adds": remaining_adds,
             "terminates": remaining_terminates,
+            "renames": [
+                {
+                    "type": "RENAME",
+                    "name": rename["name"],
+                    "old_ministry": rename["old ministry"],
+                    "new_ministry": rename["new ministry"],
+                    "date": rename["date"],
+                }
+                for rename in renames
+            ]
         }
     }

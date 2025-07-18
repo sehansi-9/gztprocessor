@@ -16,6 +16,7 @@ def extract_initial_gazette_data(gazette_number: str, date_str: str) -> dict:
         )
     return ministries
 
+# TODO: Resolve this issue for renames: https://github.com/zaeema-n/orgchart_nexoan/issues/11#issue-3238949430
 
 def extract_column_II_department_changes(gazette_number: str, date_str: str) -> tuple[list[dict], list[dict]]:
     data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date_str)

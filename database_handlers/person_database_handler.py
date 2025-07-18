@@ -71,6 +71,25 @@ def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: d
             if not any(pf["name"] == ministry and pf["position"] == position for pf in new_state[name]["portfolios"]):
                 new_state[name]["portfolios"].append({"name": ministry, "position": position})
 
+        # Apply RENAMEs
+        for tx in txs.get("renames", []):
+            name = tx["name"]
+            old_ministry = tx["old_ministry"]
+            new_ministry = tx["new_ministry"]
+
+            if name in new_state:
+                portfolios = new_state[name]["portfolios"]
+                found = False
+                for pf in portfolios:
+                    if pf["name"] == old_ministry:
+                        pf["name"] = new_ministry 
+                        found = True
+                if not found:
+                    print(f"⚠️ RENAME skipped: '{old_ministry}' not found under '{name}'")
+            else:
+                print(f"⚠️ RENAME skipped: person '{name}' not found in current state")
+
+
         # 4. Insert new state into person/portfolio with gazette_number/date
         for person in new_state.values():
             cur.execute(
