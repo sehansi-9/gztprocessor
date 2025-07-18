@@ -2,10 +2,11 @@ import re
 from rapidfuzz import fuzz
 from db_connections.db_person import get_connection
 from nltk.stem import PorterStemmer
+from state_managers.person_state_manager import PersonStateManager
 from utils import load_person_gazette_data_from_JSON
 
 stemmer = PorterStemmer()
-
+person_state_manager = PersonStateManager()
 
 def clean_ministry_name(name: str) -> str:
     """
@@ -17,7 +18,7 @@ def clean_ministry_name(name: str) -> str:
     return " ".join(filtered)
 
 
-def get_fuzzy_matches_for_ministry(ministry_name: str, threshold=70) -> list[dict]:
+def get_fuzzy_matches_for_ministry(ministry_name: str, gazette_number: str, date_str: str, threshold=70) -> list[dict]:
     """
     Fuzzy match a given ministry name against current ministry-person assignments in DB.
     Uses cleaned & stemmed names for comparison, but returns original labels.
@@ -29,12 +30,18 @@ def get_fuzzy_matches_for_ministry(ministry_name: str, threshold=70) -> list[dic
 
     with get_connection() as conn:
         cur = conn.cursor()
+        try:
+            prev_gazette, prev_date = person_state_manager.get_latest_state_info(cur, gazette_number, date_str)
+        except FileNotFoundError:
+            return []
         cur.execute(
             """
             SELECT portfolio.name, portfolio.position, person.name
             FROM portfolio
             LEFT JOIN person ON portfolio.person_id = person.id
-         """
+            WHERE portfolio.gazette_number = ? AND portfolio.date = ?
+            """,
+            (prev_gazette, prev_date)
         )
         db_ministries = cur.fetchall()
 
@@ -78,7 +85,7 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
         used_terminate_names.add(name)
 
         raw_suggestions = get_fuzzy_matches_for_ministry(
-            add_entry.get("Ministry", ""), threshold=70
+            add_entry.get("Ministry", ""), gazette_number, date_str, threshold=70
         )
 
         filtered_suggestions = [
@@ -112,7 +119,7 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
                     "new_position": entry["position"],
                     "date": entry["date"],
                     "suggested_terminates": get_fuzzy_matches_for_ministry(
-                        entry.get("Ministry", ""), threshold=70
+                        entry.get("Ministry", ""), gazette_number, date_str, threshold=70
                     ),
                 }
             )

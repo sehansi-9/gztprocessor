@@ -14,13 +14,13 @@ class AbstractStateManager(ABC):
     def _get_state_from_db(self, cur, gazette_number: str, date_str: str) -> dict: ...
 
     @abstractmethod
-    def get_latest_db_row(self, cur) -> tuple[str, str]: ...
-
-    @abstractmethod
     def get_gazette_numbers_for_date(self, cur, date_str: str) -> list[str]: ...
 
     @abstractmethod
     def export_state_snapshot(self, gazette_number: str, date_str: str): ...
+
+    @abstractmethod
+    def get_latest_state_info(self) -> tuple[str, str]: ...
 
     @abstractmethod
     def clear_db(self): ...
@@ -35,11 +35,6 @@ class AbstractStateManager(ABC):
             gazette_number, date_str = self.get_latest_db_row(cur)
             state = self._get_state_from_db(cur, gazette_number, date_str)
             return gazette_number, date_str, state
-
-    def get_latest_state_date(self) -> tuple[str, str]:
-        with self.get_connection() as conn:
-            cur = conn.cursor()
-            return self.get_latest_db_row(cur)
 
     def get_state_by_date(self, date_str: str) -> dict | list[str]:
         with self.get_connection() as conn:

@@ -20,6 +20,20 @@ class PersonStateManager(AbstractStateManager):
             raise FileNotFoundError("No state found in person DB.")
         return row
 
+    def get_latest_state_info(self, cur, gazette_number, date_str):
+        cur.execute(
+            """
+            SELECT gazette_number, date FROM person
+            WHERE (date < ? OR (date = ? AND gazette_number < ?))
+            ORDER BY date DESC, gazette_number DESC LIMIT 1
+            """,
+            (date_str, date_str, gazette_number)
+        )
+        row = cur.fetchone()
+        if not row:
+            raise FileNotFoundError("No previous state found in person DB.")
+        return row
+
     def get_gazette_numbers_for_date(self, cur, date_str: str) -> list[str]:
         cur.execute("SELECT gazette_number FROM person WHERE date = ? GROUP BY gazette_number", (date_str,))
         return [row[0] for row in cur.fetchall()]

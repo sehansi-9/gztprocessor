@@ -24,6 +24,20 @@ class MindepStateManager(AbstractStateManager):
         cur.execute("SELECT gazette_number FROM ministry WHERE date = ? GROUP BY gazette_number", (date_str,))
         return [row[0] for row in cur.fetchall()]
 
+    def get_latest_state_info(self, cur, gazette_number, date_str):
+        cur.execute(
+            """
+            SELECT gazette_number, date FROM ministry
+            WHERE (date < ? OR (date = ? AND gazette_number < ?))
+            ORDER BY date DESC, gazette_number DESC LIMIT 1
+            """,
+            (date_str, date_str, gazette_number)
+        )
+        row = cur.fetchone()
+        if not row:
+            raise FileNotFoundError("No previous state found in ministry DB.")
+        return row
+
     def _get_state_from_db(self, cur, gazette_number: str, date_str: str) -> dict:
         snapshot = {"ministers": []}
         cur.execute("SELECT id, name FROM ministry WHERE gazette_number = ? AND date = ? ORDER BY id ASC", (gazette_number, date_str))
