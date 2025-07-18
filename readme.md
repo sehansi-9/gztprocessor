@@ -1,8 +1,8 @@
 # Gazette Processor API
 
-A FastAPI backend for tracking and versioning structural changes in Sri Lankan government gazettes. Supports both:
-- **MinDep**: Ministries and Departments (structural changes, e.g. ADD, TERMINATE, MOVE)
-- **Person**: Person-portfolio assignments (appointments, removals, renames)
+A FastAPI backend for tracking and versioning structural changes in Sri Lankan government gazettes. Supports:
+- **MinDep**: Ministries and Departments (structural changes: ADD, TERMINATE, MOVE)
+- **Person**: Person-portfolio assignments (appointments, removals)
 
 ---
 
@@ -58,14 +58,15 @@ A FastAPI backend for tracking and versioning structural changes in Sri Lankan g
 1. **Install dependencies**
    ```bash
    pip install fastapi uvicorn rapidfuzz nltk
+   # For some FastAPI features:
+   pip install python-multipart
    ```
-   (You may also need: `pip install python-multipart` for some FastAPI features.)
 
 2. **Initialize databases**
    ```bash
    python main.py
+   # This creates SQLite DBs for both MinDep and Person.
    ```
-   This creates SQLite DBs for both MinDep and Person.
 
 3. **Run the API**
    ```bash
@@ -74,7 +75,10 @@ A FastAPI backend for tracking and versioning structural changes in Sri Lankan g
 
 4. **Ensure required folders exist**
    ```bash
+   # On Unix/Linux/macOS:
    mkdir -p state/mindep state/person input/mindep input/person output/mindep output/person
+   # On Windows PowerShell:
+   New-Item -ItemType Directory -Force -Path state\mindep, state\person, input\mindep, input\person, output\mindep, output\person
    ```
 
 ---
@@ -125,7 +129,86 @@ For `/person/{date}/{gazette_number}`:
 
 ---
 
-## How It Works
+## Request Bodies
+
+- Many POST endpoints require a JSON request body. The expected structure depends on the endpoint:
+
+### MinDep Initial Gazette (POST)
+- **Endpoint:** `/mindep/initial/{date}/{gazette_number}`
+- **Body:**
+  ```json
+  {
+    "ministers": [
+      { "name": "Minister of X", "departments": ["Dept A", "Dept B"] }
+    ]
+  }
+  ```
+
+### MinDep Amendment Gazette (POST)
+- **Endpoint:** `/mindep/amendment/{date}/{gazette_number}`
+- **Body:**
+  ```json
+  {
+    "transactions": {
+      "moves": [ ... ],
+      "adds": [ ... ],
+      "terminates": [ ... ]
+    }
+  }
+  ```
+  - See `request_body/mindep/first_amendment.json` and `second_amendment.json` for real examples.
+
+### Person Gazette (POST)
+- **Endpoint:** `/person/{date}/{gazette_number}`
+- **Body:**
+  ```json
+  {
+    "transactions": {
+      "moves": [ ... ],
+      "adds": [ ... ],
+      "terminates": [ ... ]
+    }
+  }
+  ```
+  - See `request_body/person/first_amendment.json` and `second_amendment.json` for real examples.
+
+- **Sample payloads:**
+  - The `request_body/` directory contains example JSON files for both MinDep and Person endpoints. Use these as templates for your API requests or for testing with tools like Postman or curl.
+
+---
+
+## API Endpoints
+
+### MinDep Endpoints
+| Endpoint                                         | Method | Description                                                      |
+| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `/mindep/state/latest`                           | GET    | Get latest saved state (gazette number, date, state)             |
+| `/mindep/state/{date}`                           | GET    | Get state(s) for a specific date; returns gazette numbers if multiple |
+| `/mindep/state/{date}/{gazette_number}`          | GET    | Get a specific state by date and gazette number                  |
+| `/mindep/initial/{date}/{gazette_number}`        | GET    | Preview contents of initial gazette                              |
+| `/mindep/initial/{date}/{gazette_number}`        | POST   | Create initial state in DB & save snapshot (**Body:** JSON with `ministers` array) |
+| `/mindep/amendment/{date}/{gazette_number}`      | GET    | Detect transactions from amendment                               |
+| `/mindep/amendment/{date}/{gazette_number}`      | POST   | Apply confirmed transactions to DB & snapshot (**Body:** JSON with `transactions` object) |
+| `/mindep/state/reset`                            | DELETE | Deletes all MinDep state files and DB                            |
+
+### Person Endpoints
+| Endpoint                                         | Method | Description                                                      |
+| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `/person/state/latest`                           | GET    | Get latest saved persons and their portfolios                    |
+| `/person/state/{date}`                           | GET    | Get state(s) for a specific date; returns gazette numbers if multiple |                   
+| `/person/state/{date}/{gazette_number}`          | GET    | Get a specific person and portfolio state by date and gazette number |
+| `/person/{date}/{gazette_number}`                | GET    | Preview predicted transactions from person gazette               |
+| `/person/{date}/{gazette_number}`                | POST   | Apply reviewed transactions to DB & save snapshot (**Body:** JSON with `transactions` array) |
+| `/person/state/reset`                            | DELETE | Deletes all Person state files and DB                            |
+
+### System
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |
+| `/`      | GET    | Health check/status message |
+
+---
+
+## Workflows
 
 ### MinDep Flow
 1. **Load initial state** from input file (JSON)
@@ -145,97 +228,72 @@ For `/person/{date}/{gazette_number}`:
 
 ---
 
-## API Endpoints
+## CSV Output
 
-### MinDep Endpoints
-| Endpoint                                         | Method | Description                                                      |
-| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
-| `/mindep/state/latest`                           | GET    | Get latest saved state (gazette number, date, state)             |
-| `/mindep/state/{date}`                           | GET    | Get state(s) for a specific date; returns gazette numbers if multiple |
-| `/mindep/state/{date}/{gazette_number}`          | GET    | Get a specific state by date and gazette number                  |
-| `/mindep/state/{date}/{gazette_number}`          | POST   | Load state snapshot into DB for a specific date and gazette      |
-| `/mindep/initial/{date}/{gazette_number}`        | GET    | Preview contents of initial gazette                              |
-| `/mindep/initial/{date}/{gazette_number}`        | POST   | Create initial state in DB & save snapshot                       |
-| `/mindep/amendment/{date}/{gazette_number}`      | GET    | Detect transactions from amendment                               |
-| `/mindep/amendment/{date}/{gazette_number}`      | POST   | Apply confirmed transactions to DB & snapshot                    |
-
-### Person Endpoints
-| Endpoint                                         | Method | Description                                                      |
-| ------------------------------------------------ | ------ | ---------------------------------------------------------------- |
-| `/person/state/latest`                           | GET    | Get latest saved persons and their portfolios                                     |
-| `/person/state/{date}`                           | GET    | Get persons and portfolios for a specific date                          |
-| `/person/state/{date}/{gazette_number}`          | GET    | Get a specific person and portfolio state by date and gazette number           |
-| `/person/{date}/{gazette_number}`                | GET    | Preview predicted transactions from person gazette               |
-| `/person/{date}/{gazette_number}`                | POST   | Apply reviewed transactions to DB & save snapshot                |
-
-### System Reset
-| Endpoint | Method   | Description                           |
-| -------- | -------- | ------------------------------------- |
-| `/mindep/state/reset` | DELETE | Deletes all MinDep state files and DB |
-| `/person/state/reset` | DELETE | Deletes all Person state files and DB |
+- Transaction CSVs are generated in the `output/` directory, organized by type, date, and gazette number (e.g., `output/mindep/2022-09-16/2297-78/`).
+- For each processed gazette, CSV files are created for `ADD`, `MOVE`, and `TERMINATE` transactions.
+- **Sample MinDep CSV row:**
+  ```csv
+  transaction_id,parent,parent_type,child,child_type,rel_type,date
+  2297-78_tr_01,Minister of Labour,minister,Vocational Training Authority,department,AS_DEPARTMENT,2022-09-16
+  ```
+- **Sample Person CSV row:**
+  ```csv
+  type,name,Ministry,date,position
+  ADD,Hon. John Doe,Ministry of Roads and Highways,2018-07-15,Minister
+  ```
 
 ---
 
-## Transaction Types
+## State Snapshots
 
-### MinDep
-| Type        | Description                                                         |
-| ----------- | ------------------------------------------------------------------- |
-| `ADD`       | Department newly inserted in a ministry                             |
-| `TERMINATE` | Department removed and not found elsewhere                          |
-| `MOVE`      | Department omitted in one ministry and added in another (same name) |
-
-### Person
-| Type        | Description                                                         |
-| ----------- | ------------------------------------------------------------------- |
-| `ADD`       | Person assigned to a ministry/portfolio                             |
-| `TERMINATE` | Person removed from a ministry/portfolio                            |
-| `MOVE`      | Person moved from one ministry/portfolio to another                 |
-| `RENAME`    | Ministry/portfolio renamed for a person                             |
+- Snapshots are saved as JSON in `state/mindep/` and `state/person/`.
+- **MinDep Example:**
+  ```json
+  {
+    "ministers": [
+      {
+        "name": "Minister of Finance",
+        "departments": [
+          "Department of Treasury",
+          "Inland Revenue",
+          "Customs"
+        ]
+      }
+    ]
+  }
+  ```
+- **Person Example:**
+  ```json
+  {
+    "persons": [
+      {
+        "person_name": "Hon. John Doe",
+        "portfolios": [
+          { "name": "Ministry of Roads and Highways", "position": "Minister" }
+        ]
+      }
+    ]
+  }
+  ```
 
 ---
 
-## State Snapshot Formats
+## Error Handling
 
-### MinDep Example
-```json
-{
-  "ministers": [
-    {
-      "name": "Minister of Finance",
-      "departments": [
-        "Department of Treasury",
-        "Inland Revenue",
-        "Customs"
-      ]
-    }
-  ]
-}
-```
-Saved as: `state/mindep/state_{gazette_number}_{YYYY-MM-DD}.json`
-
-### Person Example
-```json
-{
-  "persons": [
-    {
-      "person_name": "Hon. John Doe",
-      "portfolios": [
-        { "name": "Ministry of Roads and Highways", "position": "Minister" }
-      ]
-    }
-  ]
-}
-```
-Saved as: `state/person/state_{gazette_number}_{YYYY-MM-DD}.json`
+- The API returns JSON error messages for missing files, invalid requests, or not found resources. Example:
+  ```json
+  { "error": "Gazette file for 2297-78, 2022-09-16 not found." }
+  ```
+- Always check the response for an `error` key if your request fails.
+- The backend prints warnings to the console for missing or duplicate data.
 
 ---
 
 ## Developer Notes
-- The system relies on department/person position for parsing and matching
+- The system relies on department/person position for parsing and matching for mindep
 - MOVEs are inferred by matching omitted/added names
-- RENAMEs are detected for person gazettes when ministry/portfolio names change
-- Snapshots enable rollback, history tracking, and diffing
+- RENAMEs are detected for person gazettes when ministry/portfolio names change (TO DO)
 - Input/output file naming conventions are important (see `utils.py`)
 - **Stemming, Fuzzy Matching, and Scores:**
   - For person gazettes, the system uses stemming (via NLTK's PorterStemmer) and fuzzy string matching (via RapidFuzz) to compare ministry/portfolio names.
@@ -249,6 +307,7 @@ Saved as: `state/person/state_{gazette_number}_{YYYY-MM-DD}.json`
 ## Testing
 - Use `curl` or Postman to test endpoints
 - See `input/` for sample gazette files and dates/gazette numbers
+- See `request_body/` for sample request payloads
 
 Example:
 ```bash
