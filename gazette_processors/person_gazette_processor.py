@@ -147,8 +147,8 @@ def process_person_gazette(gazette_number: str, date_str: str) -> dict:
                 {
                     "type": "RENAME",
                     "name": rename["name"],
-                    "old_ministry": rename["old ministry"],
-                    "new_ministry": rename["new ministry"],
+                    "old_ministry": rename["old_ministry"],
+                    "new_ministry": rename["new_ministry"],
                     "date": rename["date"],
                 }
                 for rename in renames
