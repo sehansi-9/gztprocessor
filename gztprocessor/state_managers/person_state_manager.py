@@ -1,6 +1,6 @@
 # state_managers/person_state_manager.py
-from state_managers.state_manager import AbstractStateManager
-from db_connections.db_person import get_connection
+from gztprocessor.state_managers.state_manager import AbstractStateManager
+from gztprocessor.db_connections.db_person import get_connection
 from pathlib import Path
 import json
 
