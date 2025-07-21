@@ -6,7 +6,7 @@ import json
 
 class PersonStateManager(AbstractStateManager):
     def __init__(self):
-        project_root = Path(__file__).resolve().parent.parent
+        project_root = Path(__file__).resolve().parent.parent.parent
         state_dir = project_root / "state" / "person"
         super().__init__(state_dir)
 
