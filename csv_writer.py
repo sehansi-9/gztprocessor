@@ -48,7 +48,7 @@ def generate_initial_add_csv(gazette_number: str, date_str: str, structure: list
 
     print(f"✅ CSV created at: {csv_path}")
 
-def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: list[dict]):
+def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: dict):
     """
     Generate 3 separate CSVs (add.csv, terminate.csv, move.csv) from amendment transactions.
     Formats:
@@ -58,6 +58,15 @@ def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: li
     output_dir = Path("output") / "mindep"/  date_str / gazette_number
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if isinstance(transactions, dict) and "transactions" in transactions:
+        transactions = transactions["transactions"]
+    if isinstance(transactions, dict):
+        transactions = (
+            transactions.get("moves", []) +
+            transactions.get("adds", []) +
+            transactions.get("terminates", [])
+        )
+        
     add_rows = []
     terminate_rows = []
     move_rows = []

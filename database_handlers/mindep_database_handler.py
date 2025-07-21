@@ -36,7 +36,16 @@ def load_initial_state_to_db(gazette_number: str, date_str: str, ministries: lis
     print(f"Initial state replaced for gazette {gazette_number} on {date_str}.")
 
 
-def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: list[dict]):
+def apply_transactions_to_db(gazette_number: str, date_str: str, transactions: dict):
+    if isinstance(transactions, dict) and "transactions" in transactions:
+        transactions = transactions["transactions"]
+    if isinstance(transactions, dict):
+        transactions = (
+            transactions.get("moves", []) +
+            transactions.get("adds", []) +
+            transactions.get("terminates", [])
+        )
+        
     with get_connection() as conn:
         cur = conn.cursor()
 
