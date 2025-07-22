@@ -249,7 +249,7 @@ readme.md
 - Use `curl` or Postman to test endpoints (if using the API)
 - See `input/` for sample gazette files and dates/gazette numbers
 - See `request_body/` for sample request payloads
-
+- See https://github.com/sehansi-9/test-gztprocessor for a sample use of gztprocessor
 ---
 
 ## License
