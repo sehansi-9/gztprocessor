@@ -16,7 +16,7 @@ def extract_initial_gazette_data(gazette_number: str, date_str: str, data: dict)
 
 # TODO: Resolve this issue for renames: https://github.com/zaeema-n/orgchart_nexoan/issues/11#issue-3238949430
 
-def extract_column_II_department_changes(gazette_number: str, date_str: str, data: dict) -> tuple[list[dict], list[dict]]:
+def extract_column_II_department_changes(data: dict) -> tuple[list[dict], list[dict]]:
 
     adds = [e for e in data.get("ADD", []) if e.get("affected_column") == "II"]
     omits = [e for e in data.get("OMIT", []) if e.get("affected_column") == "II"]
@@ -204,9 +204,9 @@ def classify_department_changes(added: list[dict], removed: list[dict]) -> dict:
 
 
 
-def process_amendment_gazette(gazette_number: str, date_str: str) -> list[dict]:
+def process_amendment_gazette(gazette_number: str, date_str: str, data) -> list[dict]:
     try:
-        added, removed_raw = extract_column_II_department_changes(gazette_number, date_str)
+        added, removed_raw = extract_column_II_department_changes(data)
     except ValueError as e:
         print(f" Failed to extract column II changes for gazette {gazette_number} on {date_str}: {e}")
         return []
