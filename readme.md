@@ -21,11 +21,12 @@ Supports:
 ## Installation
 
 ```bash
-pip install gztprocessor
+pip install git+https://github.com/sehansi-9/gztextractor.git
 # or, for development:
 pip install -e .
 # To enable API features:
-pip install gztprocessor[api]
+pip install "git+https://github.com/sehansi-9/gztextractor.git#egg=gztprocessor[api]"
+
 ```
 
 ---
