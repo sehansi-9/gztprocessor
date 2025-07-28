@@ -7,10 +7,11 @@ from gztprocessor.state_managers.mindep_state_manager import MindepStateManager
 mindep_state_manager = MindepStateManager()
 
 # TODO: resolve issue https://github.com/LDFLK/gztprocessor/issues/4
+# Currently the processor identifies a department that wasn't in previous gov's latest state as a new department assuming that all departments are always assigned to some portfolio at any given moment.
 def get_ministry_where_department_was_before(department_name: str, gazette_number: str, date_str: str
 ) -> str:
     """
-    Get the ministry where a department was before the current gazette.
+    Get the ministry where a department was before the current initial gazette.
     This is used to determine the previous ministry for a department that has been moved.
     """
     try:
