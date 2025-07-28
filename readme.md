@@ -63,7 +63,7 @@ gztprocessor/
   └── __init__.py
 main.py
 MANIFEST.in
-setup.py
+pyproject.toml
 readme.md
 ```
 
