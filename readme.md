@@ -110,9 +110,24 @@ readme.md
 ```json
 {
   "ministers": [
-    { "name": "Minister of X", "departments": ["Dept A", "Dept B"] }
+    {
+      "name": "Minister of X",
+      "departments": [
+        { "name": "Dept A" },
+        { "name": "Dept B", "previous_ministry": "Minister of Y" },
+        { "name": "Dept C" , "previous_ministry": "Minister of G"}
+      ]
+    },
+    {
+      "name": "Minister of Z",
+      "departments": [
+        { "name": "Dept D", "previous_ministry": "Minister of X" },
+        { "name": "Dept E" }
+      ]
+    }
   ]
 }
+
 ```
 
 ### MinDep Amendment Gazette (POST)
