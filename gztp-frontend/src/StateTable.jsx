@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     Box,
     Typography,
@@ -12,6 +13,7 @@ import {
     InputBase,
     Avatar,
     Divider,
+    CircularProgress,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
@@ -50,32 +52,15 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 const dummyData = {
-    presidents: [  {
+    presidents: [
+        {
             name: 'President A',
             imageUrl: '',
-            created: '2020-01-01',
+            created: '2022-01-01',
             gazettes: [
-                {
-                    number: 'GZ001',
-                    date: '2020-01-10',
-                    ministers: [
-                        { name: 'Minister A1', departments: ['Dept A1-1', 'Dept A1-2'] },
-                    ],
-                },
-                {
-                    number: 'GZ002',
-                    date: '2020-02-15',
-                    ministers: [
-                        { name: 'Minister A2', departments: ['Dept A2-1'] },
-                    ],
-                },
-                {
-                    number: 'GZ003',
-                    date: '2020-03-20',
-                    ministers: [
-                        { name: 'Minister A3', departments: ['Dept A3-1'] },
-                    ],
-                },
+                { number: '2289-43', date: '2022-07-22', ministers: null },
+                { number: '2297-78', date: '2022-09-16', ministers: null },
+                { number: '2300-24', date: '2022-09-16', ministers: null },
             ],
         },
         {
@@ -83,7 +68,8 @@ const dummyData = {
             imageUrl: '',
             created: '2021-01-01',
             gazettes: [],
-        },],
+        },
+    ],
 };
 
 function highlightMatch(text, query) {
@@ -93,11 +79,13 @@ function highlightMatch(text, query) {
 }
 
 export default function StateTable() {
+    const [data, setData] = useState(dummyData);
     const [selectedPresidentIndex, setSelectedPresidentIndex] = useState(0);
     const [selectedGazetteIndex, setSelectedGazetteIndex] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const presidents = dummyData.presidents || [];
+    const presidents = data.presidents || [];
     const selectedPresident = presidents[selectedPresidentIndex];
     const hasGazettes = selectedPresident?.gazettes?.length > 0;
     const selectedGazette = hasGazettes ? selectedPresident.gazettes[selectedGazetteIndex] : null;
@@ -110,19 +98,33 @@ export default function StateTable() {
         );
     }) || [];
 
+    useEffect(() => {
+        const loadState = async () => {
+            if (!selectedGazette || selectedGazette.ministers) return;
+            setLoading(true);
+            try {
+                const res = await axios.get(`http://localhost:8000/mindep/state/${selectedGazette.date}/${selectedGazette.number}`);
+                const updatedData = { ...data };
+                updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = res.data.state.ministers;
+                setData(updatedData);
+            } catch (err) {
+                console.error("Failed to fetch gazette state:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadState();
+    }, [selectedGazetteIndex, selectedPresidentIndex]);
+
     return (
         <Box p={4} sx={{ maxWidth: '1000px', mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                Org State
-            </Typography>
-
+            <Typography variant="h4" gutterBottom fontWeight="bold">Org State</Typography>
             <Divider sx={{ my: 3 }} />
 
-            {/* Presidents Row */}
+            {/* Presidents */}
             {presidents.length === 0 ? (
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    ⚠️ No presidents available.
-                </Typography>
+                <Typography variant="body1" color="text.secondary">⚠️ No presidents available.</Typography>
             ) : (
                 <Box display="flex" gap={14} mb={4}>
                     {presidents.map((pres, idx) => (
@@ -135,131 +137,100 @@ export default function StateTable() {
                             sx={{
                                 textAlign: 'center',
                                 cursor: 'pointer',
-                                transition: 'transform 0.3s',
                                 transform: idx === selectedPresidentIndex ? 'scale(1.5)' : 'scale(1)',
+                                transition: 'transform 0.3s',
                             }}
                         >
-                            <Avatar
-                                src={pres.imageUrl}
-                                sx={{
-                                    width: 36,
-                                    height: 36,
-                                    mb: 1,
-                                    ml: 2.5,
-                                    boxShadow: idx === selectedPresidentIndex ? 4 : 1,
-                                }}
-                            />
+                            <Avatar src={pres.imageUrl} sx={{ width: 36, height: 36, mb: 1, ml: 2.5, boxShadow: idx === selectedPresidentIndex ? 4 : 1 }} />
                             <Typography variant="body1" fontWeight="medium">{pres.name}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {pres.created?.split('-')[0] || 'N/A'}
-                            </Typography>
+                            <Typography variant="caption" color="text.secondary">{pres.created?.split('-')[0] || 'N/A'}</Typography>
                         </Box>
                     ))}
                 </Box>
             )}
 
-            {/* Gazette Tabs + Table */}
-            {presidents.length > 0 && selectedPresident ? (
-                !hasGazettes ? (
-                    <Typography variant="body1" color="text.secondary">
-                        No gazettes available for <strong>{selectedPresident.name}</strong>.
-                    </Typography>
-                ) : (
-                    <>
-                        {/* Gazette Timeline */}
-                        <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-                            {selectedPresident.gazettes.map((gazette, gIdx) => (
-                                <Paper
-                                    elevation={gIdx === selectedGazetteIndex ? 6 : 1}
-                                    key={gIdx}
-                                    onClick={() => setSelectedGazetteIndex(gIdx)}
-                                    sx={{
-                                        px: 2,
-                                        py: 1,
-                                        cursor: 'pointer',
-                                        borderRadius: '12px',
-                                        border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
-                                        backgroundColor: gIdx === selectedGazetteIndex ? '#15191dff' : 'white',
-                                    }}
-                                >
-                                    <Typography variant="body2" fontWeight="medium">
-                                        {gazette.number}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {gazette.date}
-                                    </Typography>
-                                </Paper>
-                            ))}
-                        </Box>
-
-                        {/* Search */}
-                        <Search sx={{ mb: 2 }}>
-                            <SearchIconWrapper>
-                                <SearchIcon />
-                            </SearchIconWrapper>
-                            <StyledInputBase
-                                placeholder="Search ministers or departments"
-                                inputProps={{ 'aria-label': 'search' }}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </Search>
-
-                        {/* Table */}
-                        {!selectedGazette || !Array.isArray(selectedGazette.ministers) ? (
-                            <Paper sx={{ p: 4, mt: 4, borderRadius: 3, boxShadow: 3 }}>
-                                <Typography variant="body1" color="error">
-                                    ⚠️ No ministers available for this gazette.
-                                </Typography>
+            {/* Gazette Tabs */}
+            {hasGazettes ? (
+                <>
+                    <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+                        {selectedPresident.gazettes.map((gazette, gIdx) => (
+                            <Paper
+                                elevation={gIdx === selectedGazetteIndex ? 6 : 1}
+                                key={gIdx}
+                                onClick={() => setSelectedGazetteIndex(gIdx)}
+                                sx={{
+                                    px: 2,
+                                    py: 1,
+                                    cursor: 'pointer',
+                                    borderRadius: '12px',
+                                    border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
+                                    backgroundColor: gIdx === selectedGazetteIndex ? '#15191dff' : 'white',
+                                }}
+                            >
+                                <Typography variant="body2" fontWeight="medium">{gazette.number}</Typography>
+                                <Typography variant="caption" color="text.secondary">{gazette.date}</Typography>
                             </Paper>
-                        ) : (
-                            <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 2, boxShadow: 3 }}>
-                                <Table>
-                                    <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                        ))}
+                    </Box>
+
+                    {/* Search */}
+                    <Search sx={{ mb: 2 }}>
+                        <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
+                        <StyledInputBase
+                            placeholder="Search ministers or departments"
+                            inputProps={{ 'aria-label': 'search' }}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </Search>
+
+                    {/* Table */}
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
+                    ) : !selectedGazette?.ministers ? (
+                        <Paper sx={{ p: 4, mt: 4, borderRadius: 3, boxShadow: 3 }}>
+                            <Typography variant="body1" color="error">⚠️ No ministers available for this gazette.</Typography>
+                        </Paper>
+                    ) : (
+                        <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 2, boxShadow: 3 }}>
+                            <Table>
+                                <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                                    <TableRow>
+                                        <TableCell><strong>Minister</strong></TableCell>
+                                        <TableCell><strong>Departments</strong></TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredMinisters.length === 0 ? (
                                         <TableRow>
-                                            <TableCell><strong>Minister</strong></TableCell>
-                                            <TableCell><strong>Departments</strong></TableCell>
+                                            <TableCell colSpan={2}>
+                                                <Typography variant="body2" color="text.secondary">No matching records found.</Typography>
+                                            </TableCell>
                                         </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredMinisters.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={2}>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        No matching records found.
-                                                    </Typography>
+                                    ) : (
+                                        filteredMinisters.map((minister, idx) => (
+                                            <TableRow hover key={idx}>
+                                                <TableCell dangerouslySetInnerHTML={{ __html: highlightMatch(minister.name, searchQuery) }} />
+                                                <TableCell>
+                                                    <ol style={{ margin: 0, paddingLeft: '1rem' }}>
+                                                        {minister.departments.map((dept, dIdx) => (
+                                                            <li key={dIdx} dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }} />
+                                                        ))}
+                                                    </ol>
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            filteredMinisters.map((minister, idx) => (
-                                                <TableRow hover key={idx}>
-                                                    <TableCell
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: highlightMatch(minister.name, searchQuery),
-                                                        }}
-                                                    />
-                                                    <TableCell>
-                                                        <ol style={{ margin: 0, paddingLeft: '1rem' }}>
-                                                            {minister.departments.map((dept, dIdx) => (
-                                                                <li
-                                                                    key={dIdx}
-                                                                    dangerouslySetInnerHTML={{
-                                                                        __html: highlightMatch(dept, searchQuery),
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </ol>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        )}
-                    </>
-                )
-            ) : null}
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
+                </>
+            ) : (
+                <Typography variant="body1" color="text.secondary">
+                    No gazettes available for <strong>{selectedPresident.name}</strong>.
+                </Typography>
+            )}
         </Box>
     );
 }
