@@ -66,7 +66,7 @@ const dummyData = {
         {
             name: 'President B',
             imageUrl: '',
-            created: '2021-01-01',
+            created: '2024-01-01',
             gazettes: [],
         },
     ],
@@ -192,38 +192,64 @@ export default function StateTable() {
                             <Typography variant="body1" color="error">⚠️ No ministers available for this gazette.</Typography>
                         </Paper>
                     ) : (
-                        <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 2, boxShadow: 3 }}>
-                            <Table>
-                                <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                        <TableContainer
+                            component={Paper}
+                            sx={{
+                                borderRadius: 3,
+                                mt: 2,
+                                boxShadow: 3,
+                                maxHeight: 200,
+                                overflowY: 'auto',
+                            }}
+                        >
+                            <Table stickyHeader>
+                                <TableHead
+                                    sx={{
+                                        backgroundColor: '#f5f5f5',
+                                    }}
+                                >
                                     <TableRow>
-                                        <TableCell><strong>Minister</strong></TableCell>
-                                        <TableCell><strong>Departments</strong></TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>Minister</TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>Departments</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {filteredMinisters.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={2}>
-                                                <Typography variant="body2" color="text.secondary">No matching records found.</Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No matching records found.
+                                                </Typography>
                                             </TableCell>
                                         </TableRow>
                                     ) : (
+
                                         filteredMinisters.map((minister, idx) => (
                                             <TableRow hover key={idx}>
-                                                <TableCell dangerouslySetInnerHTML={{ __html: highlightMatch(minister.name, searchQuery) }} />
+                                                <TableCell
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: `${idx + 1}. ${highlightMatch(minister.name, searchQuery)}`,
+                                                    }}
+                                                />
                                                 <TableCell>
                                                     <ol style={{ margin: 0, paddingLeft: '1rem' }}>
                                                         {minister.departments.map((dept, dIdx) => (
-                                                            <li key={dIdx} dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }} />
+                                                            <li
+                                                                key={dIdx}
+                                                                dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }}
+                                                            />
                                                         ))}
                                                     </ol>
                                                 </TableCell>
                                             </TableRow>
                                         ))
+
+
                                     )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
+
                     )}
                 </>
             ) : (
