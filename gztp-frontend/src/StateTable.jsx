@@ -14,9 +14,13 @@ import {
     Avatar,
     Divider,
     CircularProgress,
+    IconButton,
+    Collapse,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -27,7 +31,6 @@ const Search = styled('div')(({ theme }) => ({
     },
     marginLeft: theme.spacing(2),
     width: '100%',
-    maxWidth: 400,
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
@@ -84,6 +87,7 @@ export default function StateTable() {
     const [selectedGazetteIndex, setSelectedGazetteIndex] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
+    const [expanded, setExpanded] = useState(true);
 
     const presidents = data.presidents || [];
     const selectedPresident = presidents[selectedPresidentIndex];
@@ -173,84 +177,110 @@ export default function StateTable() {
                         ))}
                     </Box>
 
-                    {/* Search */}
-                    <Search sx={{ mb: 2 }}>
-                        <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Search ministers or departments"
-                            inputProps={{ 'aria-label': 'search' }}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </Search>
-
-                    {/* Table */}
-                    {loading ? (
-                        <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
-                    ) : !selectedGazette?.ministers ? (
-                        <Paper sx={{ p: 4, mt: 4, borderRadius: 3, boxShadow: 3 }}>
-                            <Typography variant="body1" color="error">⚠️ No ministers available for this gazette.</Typography>
-                        </Paper>
-                    ) : (
-                        <TableContainer
-                            component={Paper}
+                    {/* Expand/Collapse Header */}
+                    <Box
+                        onClick={() => setExpanded((prev) => !prev)}
+                        sx={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            userSelect: 'none',
+                            mb: 1,
+                            justifyContent: 'space-between',
+                            
+                        }}
+                    >
+                        <Typography variant="h6"> Current State </Typography>
+                        <IconButton
+                            size="small"
+                            aria-label={expanded ? 'Collapse section' : 'Expand section'}
                             sx={{
-                                borderRadius: 3,
-                                mt: 2,
-                                boxShadow: 3,
-                                maxHeight: 200,
-                                overflowY: 'auto',
+                                transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                                transition: '0.3s',
                             }}
                         >
-                            <Table stickyHeader>
-                                <TableHead
-                                    sx={{
-                                        backgroundColor: '#f5f5f5',
-                                    }}
-                                >
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>Minister</TableCell>
-                                        <TableCell sx={{ fontWeight: 'bold' }}>Departments</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredMinisters.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={2}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    No matching records found.
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
+                            {expanded ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
+                        </IconButton>
+                    </Box>
 
-                                        filteredMinisters.map((minister, idx) => (
-                                            <TableRow hover key={idx}>
-                                                <TableCell
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: `${idx + 1}. ${highlightMatch(minister.name, searchQuery)}`,
-                                                    }}
-                                                />
-                                                <TableCell>
-                                                    <ol style={{ margin: 0, paddingLeft: '1rem' }}>
-                                                        {minister.departments.map((dept, dIdx) => (
-                                                            <li
-                                                                key={dIdx}
-                                                                dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }}
-                                                            />
-                                                        ))}
-                                                    </ol>
+                    {/* Collapsible Search + Table */}
+                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                        {/* Search */}
+                        <Search sx={{ mb: 2 }}>
+                            <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
+                            <StyledInputBase
+                                placeholder="Search ministers or departments"
+                                inputProps={{ 'aria-label': 'search' }}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </Search>
+
+                        {/* Table */}
+                        {loading ? (
+                            <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
+                        ) : !selectedGazette?.ministers ? (
+                            <Paper sx={{ p: 4, mt: 4, borderRadius: 3, boxShadow: 3 }}>
+                                <Typography variant="body1" color="error">⚠️ No ministers available for this gazette.</Typography>
+                            </Paper>
+                        ) : (
+                            <TableContainer
+                                component={Paper}
+                                sx={{
+                                    borderRadius: 3,
+                                    mt: 2,
+                                    boxShadow: 3,
+                                    maxHeight: 200,
+                                    overflowY: 'auto',
+                                    
+                                }}
+                            >
+                                <Table stickyHeader>
+                                    <TableHead
+                                        sx={{
+                                            backgroundColor: '#f5f5f5',
+                                        }}
+                                    >
+                                        <TableRow>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Minister</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold' }}>Departments</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredMinisters.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={2}>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        No matching records found.
+                                                    </Typography>
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-
-
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-
-                    )}
+                                        ) : (
+                                            filteredMinisters.map((minister, idx) => (
+                                                <TableRow hover key={idx}>
+                                                    <TableCell
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: `${idx + 1}. ${highlightMatch(minister.name, searchQuery)}`,
+                                                        }}
+                                                    />
+                                                    <TableCell>
+                                                        <ol style={{ margin: 0, paddingLeft: '1rem' }}>
+                                                            {minister.departments.map((dept, dIdx) => (
+                                                                <li
+                                                                    key={dIdx}
+                                                                    dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }}
+                                                                />
+                                                            ))}
+                                                        </ol>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+                    </Collapse>
                 </>
             ) : (
                 <Typography variant="body1" color="text.secondary">
