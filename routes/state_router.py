@@ -17,6 +17,13 @@ def create_state_routes(prefix: str, state_manager: AbstractStateManager) -> API
             return {"error": "No state versions found."}
         except ValueError as e:
             return {"error": str(e)}
+    
+    @router.get("/gazettes")
+    def get_all_gazettes():
+        try:
+            return state_manager.get_all_gazette_numbers()
+        except ValueError:
+            return {"error": "No gazettes found"}
 
     @router.get("/{date}")
     def get_state_by_date(date: str):

@@ -52,6 +52,17 @@ class MindepStateManager(AbstractStateManager):
                 "departments": departments
             })
         return snapshot
+    
+    def get_all_gazette_numbers(self) -> list[str]:
+        with self.get_connection() as conn:
+         cur = conn.cursor()
+        cur.execute("""
+        SELECT gazette_number, date FROM ministry
+        GROUP BY gazette_number, date
+        ORDER BY date ASC
+    """)
+        return cur.fetchall()
+
 
     def export_state_snapshot(self, gazette_number: str, date_str: str):
         state = self._get_state_from_db(self.get_connection().cursor(), gazette_number, date_str)

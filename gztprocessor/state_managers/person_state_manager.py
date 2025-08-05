@@ -52,7 +52,17 @@ class PersonStateManager(AbstractStateManager):
                 "portfolios": portfolios
             })
         return snapshot
-
+    
+    def get_all_gazette_numbers(self) -> list[str]:
+        with self.get_connection() as conn:
+         cur = conn.cursor()
+        cur.execute("""
+        SELECT gazette_number, date FROM person
+        GROUP BY gazette_number, date
+        ORDER BY date ASC
+    """)
+        return cur.fetchall()
+        return self.get_connection.fetchall()
     def export_state_snapshot(self, gazette_number: str, date_str: str):
         state = self._get_state_from_db(self.get_connection().cursor(), gazette_number, date_str)
         state_path = self.get_state_file_path(gazette_number, date_str)
