@@ -5,6 +5,7 @@ import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import AddGazette from './AddGazette';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -221,22 +222,7 @@ export default function StateTable() {
                                 </Paper>
                             </Box>
                         ))}
-
-                        <Box sx={{ display: 'inline-block', mr: 2 }}>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    px: 2,
-                                    py: 1,
-                                    cursor: 'pointer',
-                                    borderRadius: '12px',
-                                    border: '#1976d2',
-                                    backgroundColor: '#1976d2',
-                                }}
-                            >
-                                <Typography variant="body2" fontWeight="medium">add</Typography>
-                            </Button>
-                        </Box>
+                        <AddGazette></AddGazette>
                     </Box>
 
 
@@ -350,21 +336,7 @@ export default function StateTable() {
                     <Typography variant="body1" color="text.secondary">
                         No gazettes available for <strong>{selectedPresident.name}</strong>.
                     </Typography>
-                    <Box sx={{ display: 'inline-block', mr: 2 }}>
-                        <Button
-                            variant="contained"
-                            sx={{
-                                px: 2,
-                                py: 1,
-                                cursor: 'pointer',
-                                borderRadius: '12px',
-                                border: '#1976d2',
-                                backgroundColor: '#1976d2',
-                            }}
-                        >
-                            <Typography variant="body2" fontWeight="medium">add</Typography>
-                        </Button>
-                    </Box>
+                    <AddGazette></AddGazette>
 
                 </>
             )}
