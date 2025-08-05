@@ -1,22 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import {
-    Box,
-    Typography,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    InputBase,
-    Avatar,
-    Divider,
-    CircularProgress,
-    IconButton,
-    Collapse,
-} from '@mui/material';
+import { Box, Button, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, InputBase, Avatar, Divider, CircularProgress, IconButton, Collapse, } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -30,7 +14,7 @@ const Search = styled('div')(({ theme }) => ({
         backgroundColor: alpha(theme.palette.grey[900], 0.1),
     },
     marginLeft: theme.spacing(2),
-    width: '100%',
+
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
@@ -54,17 +38,13 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     },
 }));
 
-const dummyData = {
+const Data = {
     presidents: [
         {
             name: 'President A',
             imageUrl: '',
             created: '2022-01-01',
-            gazettes: [
-                { number: '2289-43', date: '2022-07-22', ministers: null },
-                { number: '2297-78', date: '2022-09-16', ministers: null },
-                { number: '2300-24', date: '2022-09-16', ministers: null },
-            ],
+            gazettes: [],
         },
         {
             name: 'President B',
@@ -72,6 +52,13 @@ const dummyData = {
             created: '2024-01-01',
             gazettes: [],
         },
+        {
+            name: 'President C',
+            imageUrl: '',
+            created: '2024-01-01',
+            gazettes: [],
+        },
+
     ],
 };
 
@@ -82,7 +69,7 @@ function highlightMatch(text, query) {
 }
 
 export default function StateTable() {
-    const [data, setData] = useState(dummyData);
+    const [data, setData] = useState(Data);
     const [selectedPresidentIndex, setSelectedPresidentIndex] = useState(0);
     const [selectedGazetteIndex, setSelectedGazetteIndex] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
@@ -104,11 +91,14 @@ export default function StateTable() {
 
     useEffect(() => {
         const loadState = async () => {
-            if (!selectedGazette || selectedGazette.ministers) return;
+            // Only run if selectedGazette exists and ministers are not loaded yet
+            const currentGazette = data.presidents[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
+            if (!currentGazette || currentGazette.ministers) return;
+
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:8000/mindep/state/${selectedGazette.date}/${selectedGazette.number}`);
-                const updatedData = { ...data };
+                const res = await axios.get(`http://localhost:8000/mindep/state/${currentGazette.date}/${currentGazette.number}`);
+                const updatedData = JSON.parse(JSON.stringify(data)); // Safe deep clone
                 updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = res.data.state.ministers;
                 setData(updatedData);
             } catch (err) {
@@ -119,7 +109,41 @@ export default function StateTable() {
         };
 
         loadState();
-    }, [selectedGazetteIndex, selectedPresidentIndex]);
+    }, [data, selectedPresidentIndex, selectedGazetteIndex]);
+
+
+    useEffect(() => {
+        const fetchGazettes = async () => {
+            try {
+                const res = await axios.get('http://localhost:8000/mindep/state/gazettes');
+                const gazettes = res.data;
+
+                if (!gazettes || gazettes.length === 0) {
+                    console.error("⚠️ No gazettes found.");
+                    return;
+                }
+
+                const enrichedGazettes = gazettes.map((g) => ({
+                    number: g.gazette_number,
+                    date: g.date,
+                    ministers: null,
+                }));
+                // Clone the data object safely
+                const updated = JSON.parse(JSON.stringify(Data));
+
+                // Update only President A (index 0)
+                updated.presidents[0].gazettes = enrichedGazettes;
+
+                setData(updated);
+
+            } catch (err) {
+                console.error("Failed to fetch gazettes:", err);
+            }
+        };
+
+        fetchGazettes();
+    }, []);
+
 
     return (
         <Box p={4} sx={{ maxWidth: '1000px', mx: 'auto' }}>
@@ -128,7 +152,10 @@ export default function StateTable() {
 
             {/* Presidents */}
             {presidents.length === 0 ? (
-                <Typography variant="body1" color="text.secondary">⚠️ No presidents available.</Typography>
+                <>
+                    <Typography variant="body1" color="text.secondary">⚠️ No presidents available.</Typography>
+                    <Button> Add President </Button>
+                </>
             ) : (
                 <Box display="flex" gap={14} mb={4}>
                     {presidents.map((pres, idx) => (
@@ -156,26 +183,62 @@ export default function StateTable() {
             {/* Gazette Tabs */}
             {hasGazettes ? (
                 <>
-                    <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            whiteSpace: 'nowrap',
+                            mb: 3,
+                            gap: 2,
+                            paddingBottom: 1,
+                        }}
+                    >
                         {selectedPresident.gazettes.map((gazette, gIdx) => (
-                            <Paper
-                                elevation={gIdx === selectedGazetteIndex ? 6 : 1}
+                            <Box
                                 key={gIdx}
-                                onClick={() => setSelectedGazetteIndex(gIdx)}
+                                sx={{ display: 'inline-block', mr: 2 }}
+                            >
+                                <Paper
+                                    elevation={gIdx === selectedGazetteIndex ? 6 : 1}
+                                    onClick={() => setSelectedGazetteIndex(gIdx)}
+                                    sx={{
+                                        px: 2,
+                                        py: 1,
+                                        cursor: 'pointer',
+                                        borderRadius: '12px',
+                                        border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
+                                        backgroundColor: gIdx === selectedGazetteIndex ? '#e0e8f0ff' : 'white',
+                                        display: 'inline-block',
+
+                                    }}
+                                >
+                                    <Typography variant="body2" fontWeight="medium">
+                                        {gazette.number}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {gazette.date}
+                                    </Typography>
+                                </Paper>
+                            </Box>
+                        ))}
+
+                        <Box sx={{ display: 'inline-block', mr: 2 }}>
+                            <Button
+                                variant="contained"
                                 sx={{
                                     px: 2,
                                     py: 1,
                                     cursor: 'pointer',
                                     borderRadius: '12px',
-                                    border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
-                                    backgroundColor: gIdx === selectedGazetteIndex ? '#15191dff' : 'white',
+                                    border: '#1976d2',
+                                    backgroundColor: '#1976d2',
                                 }}
                             >
-                                <Typography variant="body2" fontWeight="medium">{gazette.number}</Typography>
-                                <Typography variant="caption" color="text.secondary">{gazette.date}</Typography>
-                            </Paper>
-                        ))}
+                                <Typography variant="body2" fontWeight="medium">add</Typography>
+                            </Button>
+                        </Box>
                     </Box>
+
 
                     {/* Expand/Collapse Header */}
                     <Box
@@ -187,7 +250,7 @@ export default function StateTable() {
                             userSelect: 'none',
                             mb: 1,
                             justifyContent: 'space-between',
-                            
+
                         }}
                     >
                         <Typography variant="h6"> Current State </Typography>
@@ -232,7 +295,7 @@ export default function StateTable() {
                                     boxShadow: 3,
                                     maxHeight: 200,
                                     overflowY: 'auto',
-                                    
+
                                 }}
                             >
                                 <Table stickyHeader>
@@ -283,10 +346,29 @@ export default function StateTable() {
                     </Collapse>
                 </>
             ) : (
-                <Typography variant="body1" color="text.secondary">
-                    No gazettes available for <strong>{selectedPresident.name}</strong>.
-                </Typography>
+                <>
+                    <Typography variant="body1" color="text.secondary">
+                        No gazettes available for <strong>{selectedPresident.name}</strong>.
+                    </Typography>
+                    <Box sx={{ display: 'inline-block', mr: 2 }}>
+                        <Button
+                            variant="contained"
+                            sx={{
+                                px: 2,
+                                py: 1,
+                                cursor: 'pointer',
+                                borderRadius: '12px',
+                                border: '#1976d2',
+                                backgroundColor: '#1976d2',
+                            }}
+                        >
+                            <Typography variant="body2" fontWeight="medium">add</Typography>
+                        </Button>
+                    </Box>
+
+                </>
             )}
+
         </Box>
     );
 }
