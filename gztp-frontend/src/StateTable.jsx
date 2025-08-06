@@ -6,6 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
+import TransactionPreview from './TransactionPreview';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -92,18 +93,34 @@ export default function StateTable() {
 
     useEffect(() => {
         const loadState = async () => {
-            // Only run if selectedGazette exists and ministers are not loaded yet
-            const currentGazette = data.presidents[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
+            const currentPresident = data.presidents[selectedPresidentIndex];
+            const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
             if (!currentGazette || currentGazette.ministers) return;
 
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:8000/mindep/state/${currentGazette.date}/${currentGazette.number}`);
-                const updatedData = JSON.parse(JSON.stringify(data)); // Safe deep clone
-                updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = res.data.state.ministers;
+                const res = await axios.get(
+                    `http://localhost:8000/mindep/state/${currentGazette.date}/${currentGazette.number}`
+                );
+                const backendMinisters = res.data.state?.ministers;
+
+                const updatedData = JSON.parse(JSON.stringify(data));
+
+                if (Array.isArray(backendMinisters) && backendMinisters.length > 0) {
+
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = backendMinisters;
+                } else if (selectedGazetteIndex > 0) {
+
+                    const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
+                } else {
+
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = [];
+                }
+
                 setData(updatedData);
             } catch (err) {
-                console.error("Failed to fetch gazette state:", err);
+                console.warn("Failed to fetch state:", err);
             } finally {
                 setLoading(false);
             }
@@ -111,6 +128,7 @@ export default function StateTable() {
 
         loadState();
     }, [data, selectedPresidentIndex, selectedGazetteIndex]);
+
 
 
     useEffect(() => {
@@ -128,12 +146,13 @@ export default function StateTable() {
                     number: g.gazette_number,
                     date: g.date,
                     ministers: null,
+                    transactions: null,
+                    terminated: [],
                 }));
-                // Clone the data object safely
+
                 const updated = JSON.parse(JSON.stringify(Data));
 
-                // Update only President A (index 0)
-                updated.presidents[0].gazettes = enrichedGazettes;
+                updated.presidents[selectedPresidentIndex].gazettes = enrichedGazettes;
 
                 setData(updated);
 
@@ -222,9 +241,24 @@ export default function StateTable() {
                                 </Paper>
                             </Box>
                         ))}
-                        <AddGazette></AddGazette>
-                    </Box>
+                        <AddGazette
+                            onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions }) => {
+                                const newGazette = {
+                                    number: gazetteNumber,
+                                    date: gazetteDate,
+                                    type: gazetteType,
+                                    ministers: null,
+                                    transactions, // this will be used in preview
+                                };
+                                const updatedData = JSON.parse(JSON.stringify(data));
+                                updatedData.presidents[selectedPresidentIndex].gazettes.push(newGazette);
+                                const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
+                                setData(updatedData);
+                                setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
+                            }}
+                        />
+                    </Box>
 
                     {/* Expand/Collapse Header */}
                     <Box
@@ -330,17 +364,65 @@ export default function StateTable() {
                             </TableContainer>
                         )}
                     </Collapse>
+                    <TransactionPreview
+                        selectedGazette={
+                            Array.isArray(selectedGazette?.transactions)
+                                ? selectedGazette.transactions
+                                : Array.isArray(selectedGazette)
+                                    ? selectedGazette
+                                    : []
+                        }
+                        data={data}
+                        selectedPresidentIndex={selectedPresidentIndex}
+                        selectedGazetteIndex={selectedGazetteIndex}
+                        setData={setData}
+                    />
                 </>
             ) : (
-                <>
-                    <Typography variant="body1" color="text.secondary">
+                <Box
+                    sx={{
+                        display: 'flex',
+                        overflowX: 'auto',
+                        whiteSpace: 'nowrap',
+                        mb: 3,
+                        gap: 2,
+                        paddingBottom: 1,
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            px: 2,
+                            py: 1,
+                            cursor: 'pointer',
+                            borderRadius: '12px',
+                            height: '40px',
+
+                            display: 'inline-block',
+
+                        }}
+                        variant="body1" color="text.secondary">
                         No gazettes available for <strong>{selectedPresident.name}</strong>.
                     </Typography>
-                    <AddGazette></AddGazette>
+                    <AddGazette
+                        onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions }) => {
+                            const newGazette = {
+                                number: gazetteNumber,
+                                date: gazetteDate,
+                                type: gazetteType,
+                                ministers: null,
+                                transactions, // this will be used in preview
+                            };
+                            const updatedData = JSON.parse(JSON.stringify(data));
+                            updatedData.presidents[selectedPresidentIndex].gazettes.push(newGazette);
+                            const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
-                </>
+                            setData(updatedData);
+                            setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
+                        }}
+                    />
+                </Box>
             )}
-
         </Box>
+
     );
 }
