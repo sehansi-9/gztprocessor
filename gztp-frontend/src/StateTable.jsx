@@ -147,7 +147,9 @@ export default function StateTable() {
                     date: g.date,
                     ministers: null,
                     transactions: null,
-                    terminated: [],
+                    terminates: [],
+                    moves: [],
+                    adds: []
                 }));
 
                 const updated = JSON.parse(JSON.stringify(Data));
