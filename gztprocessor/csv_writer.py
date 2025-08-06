@@ -1,3 +1,4 @@
+import os 
 from pathlib import Path
 import csv
 
@@ -53,27 +54,37 @@ def generate_initial_add_csv(gazette_number: str, date_str: str, structure: list
                 })
             counter += 1
 
-    # Write ADD CSV
+    add_csv_path = output_dir / "add.csv"
     if add_rows:
-        csv_path = output_dir / "add.csv"
-        with open(csv_path, "w", newline='', encoding="utf-8") as f:
+        with open(add_csv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "parent", "parent_type", "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(add_rows)
-        print(f"✅ ADD CSV created at: {csv_path}")
-
-    # Write MOVE CSV
+        print(f"✅ ADD CSV created at: {add_csv_path}")
+    else:
+        if add_csv_path.exists():
+            os.remove(add_csv_path)
+            print(f"🗑️ No add rows found. Existing add.csv deleted at: {add_csv_path}")
+        else:
+            print("ℹ️ No add rows and no existing add.csv to delete.")
+            
+    move_csv_path = output_dir / "move.csv"
     if move_rows:
-        csv_path = output_dir / "move.csv"
-        with open(csv_path, "w", newline='', encoding="utf-8") as f:
+        with open(move_csv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "old_parent", "new_parent", "child", "type", "date"
             ])
             writer.writeheader()
             writer.writerows(move_rows)
-        print(f"✅ MOVE CSV created at: {csv_path}")
+        print(f"✅ MOVE CSV created at: {move_csv_path}")
+    else:
+        if move_csv_path.exists():
+            os.remove(move_csv_path)
+            print(f"🗑️ No move rows found. Existing move.csv deleted at: {move_csv_path}")
+        else:
+            print("ℹ️ No move rows and no existing move.csv to delete.")
 
 
 def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: dict):
@@ -140,36 +151,58 @@ def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: di
 
     # Write ADD
     if add_rows:
-        with open(output_dir / "add.csv", "w", newline='', encoding="utf-8") as f:
+        csv_path = output_dir/"add.csv"
+        with open(csv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "parent", "parent_type",
                 "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(add_rows)
-        print(f"✅ ADD CSV written to: {output_dir / 'add.csv'}")
+        print(f"✅ ADD CSV written to: {csv_path}")
+    else:
+     if csv_path.exists():
+        os.remove(csv_path)
+        print(f"🗑️ No add rows found. Existing add.csv deleted at: {csv_path}")
+     else:
+        print("ℹ️ No add rows and no existing add.csv to delete.")
+    
 
     # Write TERMINATE
     if terminate_rows:
-        with open(output_dir / "terminate.csv", "w", newline='', encoding="utf-8") as f:
+        csv_path = output_dir/"terminate.csv"
+        with open(csv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "parent", "parent_type",
                 "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(terminate_rows)
-        print(f"✅ TERMINATE CSV written to: {output_dir / 'terminate.csv'}")
+        print(f"✅ TERMINATE CSV written to: {csv_path}")
+    else:
+     if csv_path.exists():
+        os.remove(csv_path)
+        print(f"🗑️ No terminate rows found. Existing terminate.csv deleted at: {csv_path}")
+     else:
+        print("ℹ️ No terminate rows and no existing terminate.csv to delete.")
 
     # Write MOVE
     if move_rows:
-        with open(output_dir / "move.csv", "w", newline='', encoding="utf-8") as f:
+        csv_path = output_dir/"move.csv"
+        with open(csv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "old_parent", "new_parent",
                 "child", "type", "date"
             ])
             writer.writeheader()
             writer.writerows(move_rows)
-        print(f"✅ MOVE CSV written to: {output_dir / 'move.csv'}")
+        print(f"✅ MOVE CSV written to: {csv_path}")
+    else:
+     if csv_path.exists():
+        os.remove(csv_path)
+        print(f"🗑️ No move rows found. Existing move.csv deleted at: {csv_path}")
+     else:
+        print("ℹ️ No move rows and no existing move.csv to delete.")
 
 
 
