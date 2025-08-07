@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
-import TransactionPreview from './TransactionPreview';
+import InitialTransactionPreview from './InitialTransactionPreview';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -369,7 +369,7 @@ export default function StateTable() {
                             </TableContainer>
                         )}
                     </Collapse>
-                    <TransactionPreview
+                    <InitialTransactionPreview
                         selectedGazette={
                             Array.isArray(selectedGazette?.transactions)
                                 ? selectedGazette.transactions
