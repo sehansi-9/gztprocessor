@@ -26,6 +26,23 @@ const InitialTransactionPreview = ({
         return moveList.some(item => makeKey(item.mName, item.dName) === key);
     };
 
+    const handleRefresh = async () => {
+        const endpoint = `http://localhost:8000/mindep/initial/${gazette.date}/${gazette.number}`;
+        try {
+            const response = await axios.get(endpoint);
+
+            const updatedData = JSON.parse(JSON.stringify(data));
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = []; // clear existing moves
+
+            setData(updatedData);
+        } catch (error) {
+            console.error('Error refetching gazette:', error);
+            alert('❌ Failed to refetch gazette. Check the console for details.');
+        }
+    };
+
+
     // Handle minister name change
     const handleMinisterNameChange = (index, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -41,10 +58,10 @@ const InitialTransactionPreview = ({
     };
 
     const handlePreviousMinistryChange = (ministerIndex, deptIndex, newPrevMinistry) => {
-    const updatedData = JSON.parse(JSON.stringify(data));
-    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments[deptIndex].previous_ministry = newPrevMinistry;
-    setData(updatedData);
-};
+        const updatedData = JSON.parse(JSON.stringify(data));
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments[deptIndex].previous_ministry = newPrevMinistry;
+        setData(updatedData);
+    };
 
     const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
         const key = makeKey(ministerName, departmentName);
@@ -104,85 +121,99 @@ const InitialTransactionPreview = ({
     return (
         <Box mt={4}>
             <Typography variant="h6" gutterBottom>Preview Transactions</Typography>
+            <Button
+                onClick={handleRefresh}
+                variant="outlined"
+                color="primary"
+                sx={{ mb: 2 }}
+            >
+                🔄 Refresh Transactions
+            </Button>
             <Paper sx={{ p: 2, borderRadius: 2 }}>
-                {selectedGazette.map((min, idx) => (
-                    <Box key={idx} mb={3}>
-                        <TextField
-                            label={`Minister ${idx + 1}`}
-                            variant="standard"
-                            value={min.name}
-                            onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
-                            disabled={committing}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                        />
-
-                        {min.departments.map((dept, i) => (
-                            <Box key={i} ml={2} mb={1}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+                    {/* Left: Editable transactions */}
+                    <Box sx={{ flex: 1 }}>
+                        {selectedGazette.map((min, idx) => (
+                            <Box key={idx} mb={3}>
                                 <TextField
-                                    label={`Department ${i + 1}`}
+                                    label={`Minister ${idx + 1}`}
                                     variant="standard"
-                                    value={dept.name}
-                                    onChange={(e) => handleDeptNameChange(idx, i, e.target.value)}
+                                    value={min.name}
+                                    onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
                                     disabled={committing}
                                     fullWidth
+                                    sx={{ mb: 2 }}
                                 />
 
-                                {dept.previous_ministry && (
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={isMoved(min.name, dept.name)}
-                                                onChange={() =>
-                                                    handleToggleMove(min.name, dept.name, dept.previous_ministry)
-                                                }
-                                                disabled={committing}
-                                            />
-                                        }
-                                        label={
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                <span>Mark as a move from</span>
-                                                <TextField
-                                                    variant="standard"
-                                                    value={dept.previous_ministry}
-                                                    onChange={(e) => handlePreviousMinistryChange(idx, i, e.target.value)}
-                                                    disabled={committing}
-                                                    size="small"
-                                                    sx={{ width: '180px' }}
-                                                />
-                                            </span>
-                                        }
-                                    />
+                                {min.departments.map((dept, i) => (
+                                    <Box key={i} ml={2} mb={1}>
+                                        <TextField
+                                            label={`Department ${i + 1}`}
+                                            variant="standard"
+                                            value={dept.name}
+                                            onChange={(e) => handleDeptNameChange(idx, i, e.target.value)}
+                                            disabled={committing}
+                                            fullWidth
+                                        />
 
-                                )}
+                                        {dept.previous_ministry && (
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={isMoved(min.name, dept.name)}
+                                                        onChange={() =>
+                                                            handleToggleMove(min.name, dept.name, dept.previous_ministry)
+                                                        }
+                                                        disabled={committing}
+                                                    />
+                                                }
+                                                label={
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                        <span>Mark as a move from previous </span>
+                                                        <TextField
+                                                            variant="standard"
+                                                            value={dept.previous_ministry}
+                                                            onChange={(e) => handlePreviousMinistryChange(idx, i, e.target.value)}
+                                                            disabled={committing}
+                                                            size="small"
+                                                            sx={{ width: '180px' }}
+                                                        />
+                                                    </span>
+                                                }
+                                            />
+                                        )}
+                                    </Box>
+                                ))}
+
+                                <Divider sx={{ my: 2 }} />
                             </Box>
                         ))}
 
-                        <Divider sx={{ my: 2 }} />
+                        <Button
+                            variant="contained"
+                            color="success"
+                            sx={{ mt: 3 }}
+                            onClick={handleApproveCommit}
+                            disabled={committing}
+                        >
+                            {committing ? 'Committing...' : 'Approve & Commit Gazette'}
+                        </Button>
                     </Box>
-                ))}
 
-                {moveList.length > 0 && (
-                    <Box mt={3} p={2} bgcolor="#f5f5f5" borderRadius={2}>
-                        <Typography variant="subtitle1" gutterBottom>🔄 Departments Marked as Moves</Typography>
-                        {moveList.map(({ dName, prevMinistry, mName }, i) => (
-                            <Typography key={i} variant="body2">
-                                ❌ {dName} from {prevMinistry} to {mName}
-                            </Typography>
-                        ))}
-                    </Box>
-                )}
-
-                <Button
-                    variant="contained"
-                    color="success"
-                    sx={{ mt: 3 }}
-                    onClick={handleApproveCommit}
-                    disabled={committing}
-                >
-                    {committing ? 'Committing...' : 'Approve & Commit Gazette'}
-                </Button>
+                    {/* Right: Move list */}
+                    {moveList.length > 0 && (
+                        <Box sx={{ flex: 1, bgcolor: '#f5f5f5', p: 2, borderRadius: 2, height: 'fit-content' }}>
+                            <Typography variant="subtitle1" gutterBottom>🔄 Departments Marked as Moves</Typography>
+                            {moveList.map(({ dName, prevMinistry, mName }, i) => (
+                                <Typography key={i} variant="body2">
+                                    `` {dName} from {prevMinistry} to {mName}
+                                </Typography>
+                            ))}
+                        </Box>
+                    )}
+                </Box>
             </Paper>
+
         </Box>
     );
 };
