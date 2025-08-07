@@ -77,6 +77,7 @@ export default function StateTable() {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [expanded, setExpanded] = useState(true);
+    const [refreshFlag, setRefreshFlag] = useState(false);
 
     const presidents = data.presidents || [];
     const selectedPresident = presidents[selectedPresidentIndex];
@@ -95,7 +96,10 @@ export default function StateTable() {
         const loadState = async () => {
             const currentPresident = data.presidents[selectedPresidentIndex];
             const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
-            if (!currentGazette || currentGazette.ministers) return;
+            if (!currentGazette) return;
+
+            // Only load if ministers not yet set or explicitly null to avoid infinite loops
+            if (currentGazette.ministers !== null && currentGazette.ministers !== undefined) return;
 
             setLoading(true);
             try {
@@ -106,16 +110,17 @@ export default function StateTable() {
 
                 const updatedData = JSON.parse(JSON.stringify(data));
 
-                if (Array.isArray(backendMinisters) && backendMinisters.length > 0) {
-
+                if (backendMinisters?.length > 0) {
                     updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = backendMinisters;
-                } else if (selectedGazetteIndex > 0) {
-
-                    const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
-                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
                 } else {
-
-                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = [];
+                    // If no backend ministers for current gazette, fallback to previous gazette ministers
+                    if (selectedGazetteIndex > 0) {
+                        const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
+                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
+                    } else {
+                        // No previous gazette, so empty ministers
+                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = [];
+                    }
                 }
 
                 setData(updatedData);
@@ -127,9 +132,7 @@ export default function StateTable() {
         };
 
         loadState();
-    }, [data, selectedPresidentIndex, selectedGazetteIndex]);
-
-
+    }, [data, selectedPresidentIndex, selectedGazetteIndex, refreshFlag]);
 
     useEffect(() => {
         const fetchGazettes = async () => {
@@ -378,6 +381,7 @@ export default function StateTable() {
                         selectedPresidentIndex={selectedPresidentIndex}
                         selectedGazetteIndex={selectedGazetteIndex}
                         setData={setData}
+                        setRefreshFlag={setRefreshFlag}
                     />
                 </>
             ) : (
@@ -419,7 +423,8 @@ export default function StateTable() {
                             const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
                             setData(updatedData);
-                            setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
+                            setSelectedGazetteIndex(newGazetteIndex);
+                            setRefreshFlag(prev => !prev); // auto-switch to new gazette
                         }}
                     />
                 </Box>

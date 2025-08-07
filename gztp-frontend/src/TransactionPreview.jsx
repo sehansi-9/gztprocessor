@@ -10,8 +10,9 @@ const TransactionPreview = ({
     selectedPresidentIndex,
     selectedGazetteIndex,
     setData,
+    setRefreshFlag
 }) => {
-    const [loading, setLoading] = useState(false);
+    const [committing, setCommitting] = useState(false);
 
     const gazette = data?.presidents?.[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
     if (!gazette || !Array.isArray(selectedGazette)) return null;
@@ -40,12 +41,10 @@ const TransactionPreview = ({
     };
 
     const handleApproveCommit = async () => {
-        setLoading(true);
+        setCommitting(true);
 
-        // Build a Set of moved departments keyed by "department::minister"
         const movedDepartmentsSet = new Set(moveList.map(({ dName, mName }) => `${dName}::${mName}`));
 
-        // Construct the ministers array with departments, including previous_ministry only if moved
         const payloadMinisters = selectedGazette.map(minister => ({
             name: minister.name,
             departments: minister.departments.map(dept => {
@@ -53,13 +52,10 @@ const TransactionPreview = ({
                 if (movedDepartmentsSet.has(key)) {
                     return {
                         name: dept.name,
-                        previous_ministry: dept.previous_ministry, // include previous_ministry only if moved
+                        previous_ministry: dept.previous_ministry,
                     };
                 } else {
-                    return {
-                        name: dept.name,
-                        // no previous_ministry here
-                    };
+                    return { name: dept.name };
                 }
             }),
         }));
@@ -70,18 +66,22 @@ const TransactionPreview = ({
                 payloadMinisters
             );
 
+            // Clear ministers so that StateTable's useEffect triggers a refresh
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
+            setData(newData);
+
+            // Toggle refresh flag to trigger StateTable data reload
+            setRefreshFlag(prev => !prev);
+
             alert('✅ Gazette committed successfully! The data will refresh from backend.');
-
-            // No local state update here; rely on fetch from backend elsewhere
-
         } catch (error) {
             console.error('Error committing gazette:', error);
             alert('❌ Failed to commit gazette. Please try again.');
         } finally {
-            setLoading(false);
+            setCommitting(false);
         }
     };
-
 
     return (
         <Box mt={4}>
@@ -103,7 +103,7 @@ const TransactionPreview = ({
                                                 onChange={() =>
                                                     handleToggleMove(min.name, dept.name, dept.previous_ministry)
                                                 }
-                                                disabled={loading} // disable toggles while loading
+                                                disabled={committing} // disable toggles while committing
                                             />
                                         }
                                         label={`Previously at ${dept.previous_ministry}`}
@@ -133,9 +133,9 @@ const TransactionPreview = ({
                     color="success"
                     sx={{ mt: 3 }}
                     onClick={handleApproveCommit}
-                    disabled={loading}
+                    disabled={committing}
                 >
-                    {loading ? 'Committing...' : 'Approve & Commit Gazette'}
+                    {committing ? 'Committing...' : 'Approve & Commit Gazette'}
                 </Button>
             </Paper>
         </Box>
