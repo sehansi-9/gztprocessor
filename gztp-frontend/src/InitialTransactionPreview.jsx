@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import {
-    Box, Typography, Paper, Button, Divider, FormControlLabel, Checkbox, TextField,
+    Box, Typography, Paper, Button, Divider, FormControlLabel, Checkbox, TextField, IconButton,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 const InitialTransactionPreview = ({
     selectedGazette,
@@ -33,7 +35,7 @@ const InitialTransactionPreview = ({
 
             const updatedData = JSON.parse(JSON.stringify(data));
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = []; // clear existing moves
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
 
             setData(updatedData);
         } catch (error) {
@@ -42,15 +44,12 @@ const InitialTransactionPreview = ({
         }
     };
 
-
-    // Handle minister name change
     const handleMinisterNameChange = (index, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[index].name = newName;
         setData(updatedData);
     };
 
-    // Handle department name change
     const handleDeptNameChange = (ministerIndex, deptIndex, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments[deptIndex].name = newName;
@@ -76,6 +75,29 @@ const InitialTransactionPreview = ({
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
         setData(updatedData);
     };
+
+    const handleAddDepartment = (ministerIndex, deptIndex) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const departments = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments;
+
+        departments.splice(deptIndex + 1, 0, {
+            name: '',
+            previous_ministry: ''
+        });
+
+        setData(updatedData);
+    };
+
+    const handleDeleteDepartment = (ministerIndex, deptIndex) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const departments = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments;
+
+        if (departments.length > 1) {
+            departments.splice(deptIndex, 1);
+            setData(updatedData);
+        }
+    };
+
 
     const handleApproveCommit = async () => {
         setCommitting(true);
@@ -131,7 +153,6 @@ const InitialTransactionPreview = ({
             </Button>
             <Paper sx={{ p: 2, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-                    {/* Left: Editable transactions */}
                     <Box sx={{ flex: 1 }}>
                         {selectedGazette.map((min, idx) => (
                             <Box key={idx} mb={3}>
@@ -146,24 +167,40 @@ const InitialTransactionPreview = ({
                                 />
 
                                 {min.departments.map((dept, i) => (
-                                    <Box key={i} ml={2} mb={1}>
-                                        <TextField
-                                            label={`Department ${i + 1}`}
-                                            variant="standard"
-                                            value={dept.name}
-                                            onChange={(e) => handleDeptNameChange(idx, i, e.target.value)}
-                                            disabled={committing}
-                                            fullWidth
-                                        />
+                                    <Box key={i} ml={2} mb={2} position="relative">
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <TextField
+                                                label={`Department ${i + 1}`}
+                                                variant="standard"
+                                                value={dept.name}
+                                                onChange={(e) => handleDeptNameChange(idx, i, e.target.value)}
+                                                disabled={committing}
+                                                fullWidth
+                                            />
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleAddDepartment(idx, i)}
+                                                disabled={committing}
+                                                sx={{ border: '1px dashed gray' }}
+                                            >
+                                                <AddIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleDeleteDepartment(idx, i)}
+                                                disabled={committing || min.departments.length <= 1}
+                                                sx={{ border: '1px dashed gray' }}
+                                            >
+                                                <RemoveIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
 
                                         {dept.previous_ministry && (
                                             <FormControlLabel
                                                 control={
                                                     <Checkbox
                                                         checked={isMoved(min.name, dept.name)}
-                                                        onChange={() =>
-                                                            handleToggleMove(min.name, dept.name, dept.previous_ministry)
-                                                        }
+                                                        onChange={() => handleToggleMove(min.name, dept.name, dept.previous_ministry)}
                                                         disabled={committing}
                                                     />
                                                 }
@@ -200,7 +237,6 @@ const InitialTransactionPreview = ({
                         </Button>
                     </Box>
 
-                    {/* Right: Move list */}
                     {moveList.length > 0 && (
                         <Box sx={{ flex: 1, bgcolor: '#f5f5f5', p: 2, borderRadius: 2, height: 'fit-content' }}>
                             <Typography variant="subtitle1" gutterBottom>🔄 Departments Marked as Moves</Typography>
@@ -213,7 +249,6 @@ const InitialTransactionPreview = ({
                     )}
                 </Box>
             </Paper>
-
         </Box>
     );
 };
