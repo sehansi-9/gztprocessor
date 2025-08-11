@@ -299,9 +299,17 @@ export default function StateTable() {
                                 const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
                                 setData(updatedData);
+
+                                // Add warning for the new gazette if any existing warnings are present
+                                setGazetteWarnings((prevWarnings) => {
+                                    const hasWarnings = prevWarnings.some((w) => w === true);
+                                    return [...prevWarnings, hasWarnings]; // append true if any warning exists, else false
+                                });
+
                                 setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
                             }}
                         />
+
                     </Box>
 
                     {/* Expand/Collapse Header */}
@@ -371,6 +379,7 @@ export default function StateTable() {
                                         <TableRow>
                                             <TableCell sx={{ fontWeight: 'bold' }}>Minister</TableCell>
                                             <TableCell sx={{ fontWeight: 'bold' }}>Departments</TableCell>
+
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
