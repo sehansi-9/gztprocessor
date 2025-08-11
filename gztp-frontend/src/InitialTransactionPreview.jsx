@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, Divider, FormControlLabel, Checkbox, TextField, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import axios from 'axios';
 
 const InitialTransactionPreview = ({
@@ -13,6 +15,21 @@ const InitialTransactionPreview = ({
     setRefreshFlag
 }) => {
     const [committing, setCommitting] = useState(false);
+
+    // Track which ministers are expanded (show departments)
+    const [expandedMinisters, setExpandedMinisters] = useState(() => {
+        return selectedGazette.reduce((acc, _, i) => {
+            acc[i] = true; // default all expanded, change if you want all collapsed initially
+            return acc;
+        }, {});
+    });
+
+    const toggleMinister = (index) => {
+        setExpandedMinisters(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
+    };
 
     const gazette = data?.presidents?.[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
     if (!gazette || !Array.isArray(selectedGazette)) return null;
@@ -168,24 +185,23 @@ const InitialTransactionPreview = ({
         setData(updatedData);
     };
 
-const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
-  if (!ministerName?.trim() || !departmentName?.trim()) {
-    // If minister or department name is empty, don't add to move list
-    return;
-  }
-  const key = makeKey(ministerName, departmentName);
-  const updatedData = JSON.parse(JSON.stringify(data));
-  const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
+    const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
+        if (!ministerName?.trim() || !departmentName?.trim()) {
+            // If minister or department name is empty, don't add to move list
+            return;
+        }
+        const key = makeKey(ministerName, departmentName);
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
 
-  const exists = moves.some(item => makeKey(item.mName, item.dName) === key);
-  const updatedMoves = exists
-    ? moves.filter(item => makeKey(item.mName, item.dName) !== key)
-    : [...moves, { mName: ministerName, dName: departmentName, prevMinistry: previousMinistry }];
+        const exists = moves.some(item => makeKey(item.mName, item.dName) === key);
+        const updatedMoves = exists
+            ? moves.filter(item => makeKey(item.mName, item.dName) !== key)
+            : [...moves, { mName: ministerName, dName: departmentName, prevMinistry: previousMinistry }];
 
-  updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
-  setData(updatedData);
-};
-
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
+        setData(updatedData);
+    };
 
     const handleAddDepartment = (ministerIndex, deptIndex) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -245,7 +261,6 @@ const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
                 }),
             }));
 
-
         try {
             await axios.post(
                 `http://localhost:8000/mindep/initial/${gazette.date}/${gazette.number}`,
@@ -283,7 +298,9 @@ const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
                     <Box sx={{ flex: 1 }}>
                         {selectedGazette.map((min, idx) => (
                             <Box key={idx} mb={3}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                {/* Minister header with toggle */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, cursor: 'pointer' }} onClick={() => toggleMinister(idx)}>
+                                    {expandedMinisters[idx] ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
                                     <TextField
                                         label={`Minister ${idx + 1}`}
                                         variant="standard"
@@ -291,10 +308,11 @@ const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
                                         onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
                                         disabled={committing}
                                         fullWidth
+                                        sx={{ ml: 1 }}
                                     />
                                     <IconButton
                                         size="small"
-                                        onClick={() => handleAddMinister(idx)}
+                                        onClick={(e) => { e.stopPropagation(); handleAddMinister(idx); }}
                                         disabled={committing}
                                         sx={{ border: '1px dashed gray' }}
                                     >
@@ -302,7 +320,7 @@ const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
                                     </IconButton>
                                     <IconButton
                                         size="small"
-                                        onClick={() => handleDeleteMinister(idx)}
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteMinister(idx); }}
                                         disabled={committing || selectedGazette.length <= 1}
                                         sx={{ border: '1px dashed gray' }}
                                     >
@@ -310,8 +328,8 @@ const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
                                     </IconButton>
                                 </Box>
 
-
-                                {min.departments.map((dept, i) => (
+                                {/* Departments, collapsible */}
+                                {expandedMinisters[idx] && min.departments.map((dept, i) => (
                                     <Box key={i} ml={2} mb={2} position="relative">
                                         <Box display="flex" alignItems="center" gap={1}>
                                             <TextField
