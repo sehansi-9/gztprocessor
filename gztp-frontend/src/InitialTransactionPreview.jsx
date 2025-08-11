@@ -235,24 +235,23 @@ const InitialTransactionPreview = ({
         const updatedData = JSON.parse(JSON.stringify(data));
         const departments = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments;
 
-        if (departments.length > 1) {
-            // Get the name of the department to be deleted
-            const deptToDelete = departments[deptIndex];
-            const ministerName = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].name;
-            const keyToDelete = makeKey(ministerName, deptToDelete.name);
+        // Get the name of the department to be deleted
+        const deptToDelete = departments[deptIndex];
+        const ministerName = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].name;
+        const keyToDelete = makeKey(ministerName, deptToDelete.name);
 
-            // Remove department from list
-            departments.splice(deptIndex, 1);
+        // Remove department from list
+        departments.splice(deptIndex, 1);
 
-            // Remove from moveList if exists
-            const updatedMoves = (updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || []).filter(
-                (item) => makeKey(item.mName, item.dName) !== keyToDelete
-            );
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
+        // Remove from moveList if exists
+        const updatedMoves = (updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || []).filter(
+            (item) => makeKey(item.mName, item.dName) !== keyToDelete
+        );
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
 
-            setData(updatedData);
-        }
+        setData(updatedData);
     };
+
 
     const handleApproveCommit = async () => {
         setCommitting(true);
@@ -422,7 +421,7 @@ const InitialTransactionPreview = ({
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => handleDeleteDepartment(idx, i)}
-                                                            disabled={committing || min.departments.length <= 1}
+                                                            disabled={committing}
                                                             sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
                                                             aria-label="Remove Department"
                                                         >
