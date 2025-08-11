@@ -7,6 +7,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
 import InitialTransactionPreview from './InitialTransactionPreview';
+import ErrorIcon from '@mui/icons-material/Error';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -277,16 +278,22 @@ export default function StateTable() {
                                     <Box
                                         sx={{
                                             position: 'absolute',
-                                            top: 4,
-                                            right: 4,
-                                            color: '#d32f2f',
-                                            fontSize: '18px',
+                                            top: 1,   // lifted higher
+                                            right: -3, // pushed outwards
+                                            backgroundColor: 'white', // white circle background
+                                            borderRadius: '50%',
+                                            width: 12,
+                                            height: 12,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                             pointerEvents: 'none',
                                         }}
                                         title="This gazette must be redone because of earlier changes"
                                     >
-                                        ⚠️
+                                        <ErrorIcon sx={{ fontSize: 17, color: '#d32f2f' }} />
                                     </Box>
+
                                 )}
 
                             </Box>
