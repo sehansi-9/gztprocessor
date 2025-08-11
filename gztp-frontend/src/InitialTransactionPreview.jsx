@@ -118,19 +118,74 @@ const InitialTransactionPreview = ({
         setData(updatedData);
     };
 
-    const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
-        const key = makeKey(ministerName, departmentName);
+    // Add Minister
+    const handleAddMinister = (ministerIndex) => {
         const updatedData = JSON.parse(JSON.stringify(data));
-        const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
+        const ministries = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions;
 
-        const exists = moves.some(item => makeKey(item.mName, item.dName) === key);
-        const updatedMoves = exists
-            ? moves.filter(item => makeKey(item.mName, item.dName) !== key)
-            : [...moves, { mName: ministerName, dName: departmentName, prevMinistry: previousMinistry }];
+        ministries.splice(ministerIndex + 1, 0, {
+            name: '',
+            departments: [
+                {
+                    name: '',
+                    previous_ministry: '',
+                    show_previous_ministry: false,
+                }
+            ],
+        });
 
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
         setData(updatedData);
     };
+
+    // Delete Minister (remove ministry + related moves)
+    const handleDeleteMinister = (ministerIndex) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const ministries = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions;
+        if (ministries.length <= 1) return;  // Prevent deleting last ministry if you want
+
+        // Get ministry to remove
+        const ministryToRemove = ministries[ministerIndex];
+
+        // Remove related moves for all its departments
+        const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
+
+        const filteredMoves = moves.filter(move => {
+            // Exclude any move related to this ministry's departments
+            for (const dept of ministryToRemove.departments) {
+                const keyToRemove = makeKey(ministryToRemove.name, dept.name);
+                if (makeKey(move.mName, move.dName) === keyToRemove) {
+                    return false; // filter out
+                }
+            }
+            return true; // keep this move
+        });
+
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = filteredMoves;
+
+        // Remove the ministry
+        ministries.splice(ministerIndex, 1);
+
+        setData(updatedData);
+    };
+
+const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
+  if (!ministerName?.trim() || !departmentName?.trim()) {
+    // If minister or department name is empty, don't add to move list
+    return;
+  }
+  const key = makeKey(ministerName, departmentName);
+  const updatedData = JSON.parse(JSON.stringify(data));
+  const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
+
+  const exists = moves.some(item => makeKey(item.mName, item.dName) === key);
+  const updatedMoves = exists
+    ? moves.filter(item => makeKey(item.mName, item.dName) !== key)
+    : [...moves, { mName: ministerName, dName: departmentName, prevMinistry: previousMinistry }];
+
+  updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
+  setData(updatedData);
+};
+
 
     const handleAddDepartment = (ministerIndex, deptIndex) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -173,20 +228,23 @@ const InitialTransactionPreview = ({
 
         const movedDepartmentsSet = new Set(moveList.map(({ dName, mName }) => `${dName}::${mName}`));
 
-        const payloadMinisters = selectedGazette.map(minister => ({
-            name: minister.name,
-            departments: minister.departments.map(dept => {
-                const key = `${dept.name}::${minister.name}`;
-                if (movedDepartmentsSet.has(key) && dept.previous_ministry?.trim()) {
-                    return {
-                        name: dept.name,
-                        previous_ministry: dept.previous_ministry,
-                    };
-                } else {
-                    return { name: dept.name };
-                }
-            }),
-        }));
+        const payloadMinisters = selectedGazette
+            .filter(minister => minister.name && minister.name.trim() !== '')
+            .map(minister => ({
+                name: minister.name,
+                departments: minister.departments.map(dept => {
+                    const key = `${dept.name}::${minister.name}`;
+                    if (movedDepartmentsSet.has(key) && dept.previous_ministry?.trim()) {
+                        return {
+                            name: dept.name,
+                            previous_ministry: dept.previous_ministry,
+                        };
+                    } else {
+                        return { name: dept.name };
+                    }
+                }),
+            }));
+
 
         try {
             await axios.post(
@@ -225,15 +283,33 @@ const InitialTransactionPreview = ({
                     <Box sx={{ flex: 1 }}>
                         {selectedGazette.map((min, idx) => (
                             <Box key={idx} mb={3}>
-                                <TextField
-                                    label={`Minister ${idx + 1}`}
-                                    variant="standard"
-                                    value={min.name}
-                                    onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
-                                    disabled={committing}
-                                    fullWidth
-                                    sx={{ mb: 2 }}
-                                />
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <TextField
+                                        label={`Minister ${idx + 1}`}
+                                        variant="standard"
+                                        value={min.name}
+                                        onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
+                                        disabled={committing}
+                                        fullWidth
+                                    />
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => handleAddMinister(idx)}
+                                        disabled={committing}
+                                        sx={{ border: '1px dashed gray' }}
+                                    >
+                                        <AddIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => handleDeleteMinister(idx)}
+                                        disabled={committing || selectedGazette.length <= 1}
+                                        sx={{ border: '1px dashed gray' }}
+                                    >
+                                        <RemoveIcon fontSize="small" />
+                                    </IconButton>
+                                </Box>
+
 
                                 {min.departments.map((dept, i) => (
                                     <Box key={i} ml={2} mb={2} position="relative">
