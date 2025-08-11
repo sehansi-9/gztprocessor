@@ -205,16 +205,31 @@ const InitialTransactionPreview = ({
 
     const handleAddDepartment = (ministerIndex, deptIndex) => {
         const updatedData = JSON.parse(JSON.stringify(data));
-        const departments = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments;
+        const ministries = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions;
+        const minister = ministries[ministerIndex];
 
-        departments.splice(deptIndex + 1, 0, {
-            name: '',
-            previous_ministry: '',
-            show_previous_ministry: false,
-        });
+        if (!minister.departments || !Array.isArray(minister.departments)) {
+            minister.departments = [];
+        }
+
+        // If deptIndex is -1 (no departments yet), just push a new one at start
+        if (deptIndex === -1) {
+            minister.departments.push({
+                name: '',
+                previous_ministry: '',
+                show_previous_ministry: false,
+            });
+        } else {
+            minister.departments.splice(deptIndex + 1, 0, {
+                name: '',
+                previous_ministry: '',
+                show_previous_ministry: false,
+            });
+        }
 
         setData(updatedData);
     };
+
 
     const handleDeleteDepartment = (ministerIndex, deptIndex) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -284,23 +299,49 @@ const InitialTransactionPreview = ({
 
     return (
         <Box mt={4}>
-            <Typography variant="h6" gutterBottom>Preview Transactions</Typography>
+            <Typography variant="h6" gutterBottom>
+                Preview Transactions
+            </Typography>
             <Button
                 onClick={handleRefresh}
                 variant="outlined"
                 color="primary"
-                sx={{ mb: 2 }}
+                sx={{ mb: 3 }}
             >
                 🔄 Refresh Transactions
             </Button>
-            <Paper sx={{ p: 2, borderRadius: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+            <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+                <Box sx={{ display: "flex", flexDirection: "row", gap: 5 }}>
                     <Box sx={{ flex: 1 }}>
                         {selectedGazette.map((min, idx) => (
-                            <Box key={idx} mb={3}>
+                            <Box
+                                key={idx}
+                                mb={4}
+                                sx={{
+                                    bgcolor: "#e3f2fd",
+                                    borderRadius: 2,
+                                    p: 3,
+                                    boxShadow: 2,
+                                    borderLeft: "6px solid #1976d2",
+                                }}
+                            >
                                 {/* Minister header with toggle */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, cursor: 'pointer' }} onClick={() => toggleMinister(idx)}>
-                                    {expandedMinisters[idx] ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        mb: 2,
+                                        cursor: "pointer",
+                                        userSelect: "none",
+                                    }}
+                                    onClick={() => toggleMinister(idx)}
+                                >
+                                    {expandedMinisters[idx] ? (
+                                        <KeyboardArrowDownIcon color="primary" />
+                                    ) : (
+                                        <KeyboardArrowRightIcon color="primary" />
+                                    )}
                                     <TextField
                                         label={`Minister ${idx + 1}`}
                                         variant="standard"
@@ -308,103 +349,195 @@ const InitialTransactionPreview = ({
                                         onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
                                         disabled={committing}
                                         fullWidth
-                                        sx={{ ml: 1 }}
+                                        sx={{
+                                            ml: 1,
+                                            fontWeight: "bold",
+                                            "& .MuiInputBase-input": { fontWeight: 600 },
+                                        }}
                                     />
                                     <IconButton
                                         size="small"
-                                        onClick={(e) => { e.stopPropagation(); handleAddMinister(idx); }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAddMinister(idx);
+                                        }}
                                         disabled={committing}
-                                        sx={{ border: '1px dashed gray' }}
+                                        sx={{ border: "1px dashed #1976d2", color: "#1976d2" }}
+                                        aria-label="Add Minister"
                                     >
                                         <AddIcon fontSize="small" />
                                     </IconButton>
                                     <IconButton
                                         size="small"
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteMinister(idx); }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteMinister(idx);
+                                        }}
                                         disabled={committing || selectedGazette.length <= 1}
-                                        sx={{ border: '1px dashed gray' }}
+                                        sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
+                                        aria-label="Remove Minister"
                                     >
                                         <RemoveIcon fontSize="small" />
                                     </IconButton>
                                 </Box>
 
                                 {/* Departments, collapsible */}
-                                {expandedMinisters[idx] && min.departments.map((dept, i) => (
-                                    <Box key={i} ml={2} mb={2} position="relative">
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <TextField
-                                                label={`Department ${i + 1}`}
-                                                variant="standard"
-                                                value={dept.name}
-                                                onChange={(e) => handleDeptNameChange(idx, i, e.target.value)}
-                                                disabled={committing}
-                                                fullWidth
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleAddDepartment(idx, i)}
-                                                disabled={committing}
-                                                sx={{ border: '1px dashed gray' }}
-                                            >
-                                                <AddIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleDeleteDepartment(idx, i)}
-                                                disabled={committing || min.departments.length <= 1}
-                                                sx={{ border: '1px dashed gray' }}
-                                            >
-                                                <RemoveIcon fontSize="small" />
-                                            </IconButton>
-                                        </Box>
-
-                                        {dept.show_previous_ministry ? (
-                                            <Box display="flex" alignItems="center" gap={2} mt={1}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={isMoved(min.name, dept.name)}
-                                                            onChange={() => handleToggleMove(min.name, dept.name, dept.previous_ministry)}
-                                                            disabled={committing || !(dept.previous_ministry && dept.previous_ministry.trim())}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                            <span>Mark as a move from previous</span>
-                                                            <TextField
-                                                                variant="standard"
-                                                                value={dept.previous_ministry}
-                                                                onChange={(e) => handlePreviousMinistryChange(idx, i, e.target.value)}
-                                                                disabled={committing}
-                                                                size="small"
-                                                                sx={{ width: '180px' }}
-                                                            />
-                                                        </span>
-                                                    }
-                                                />
-                                                <Button
-                                                    onClick={() => handleRemovePreviousMinistry(idx, i)}
-                                                    size="small"
-                                                    color="error"
-                                                    disabled={committing}
+                                {expandedMinisters[idx] && (
+                                    <>
+                                        {(min.departments && min.departments.length > 0) ? (
+                                            min.departments.map((dept, i) => (
+                                                <Box
+                                                    key={i}
+                                                    ml={3}
+                                                    mb={2}
+                                                    position="relative"
+                                                    sx={{
+                                                        bgcolor: "#f0f4c3",
+                                                        borderRadius: 2,
+                                                        p: 2,
+                                                        boxShadow: 1,
+                                                        borderLeft: "4px solid #afb42b",
+                                                    }}
                                                 >
-                                                    Remove
+                                                    <Box display="flex" alignItems="center" gap={1}>
+                                                        <TextField
+                                                            label={`Department ${i + 1}`}
+                                                            variant="standard"
+                                                            value={dept.name}
+                                                            onChange={(e) =>
+                                                                handleDeptNameChange(idx, i, e.target.value)
+                                                            }
+                                                            disabled={committing}
+                                                            fullWidth
+                                                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleAddDepartment(idx, i)}
+                                                            disabled={committing}
+                                                            sx={{ border: "1px dashed #afb42b", color: "#afb42b" }}
+                                                            aria-label="Add Department"
+                                                        >
+                                                            <AddIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteDepartment(idx, i)}
+                                                            disabled={committing || min.departments.length <= 1}
+                                                            sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
+                                                            aria-label="Remove Department"
+                                                        >
+                                                            <RemoveIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Box>
+
+                                                    {dept.show_previous_ministry ? (
+                                                        <Box
+                                                            display="flex"
+                                                            alignItems="center"
+                                                            gap={2}
+                                                            mt={1}
+                                                            sx={{ flexWrap: "wrap" }}
+                                                        >
+                                                            <FormControlLabel
+                                                                control={
+                                                                    <Checkbox
+                                                                        checked={isMoved(min.name, dept.name)}
+                                                                        onChange={() =>
+                                                                            handleToggleMove(
+                                                                                min.name,
+                                                                                dept.name,
+                                                                                dept.previous_ministry
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            committing ||
+                                                                            !(dept.previous_ministry &&
+                                                                                dept.previous_ministry.trim())
+                                                                        }
+                                                                    />
+                                                                }
+                                                                label={
+                                                                    <Box
+                                                                        sx={{
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: 1,
+                                                                            flexWrap: "wrap",
+                                                                        }}
+                                                                    >
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            sx={{ minWidth: 160, fontWeight: 500 }}
+                                                                        >
+                                                                            Mark as a move from previous
+                                                                        </Typography>
+                                                                        <TextField
+                                                                            variant="standard"
+                                                                            value={dept.previous_ministry}
+                                                                            onChange={(e) =>
+                                                                                handlePreviousMinistryChange(idx, i, e.target.value)
+                                                                            }
+                                                                            disabled={committing}
+                                                                            size="small"
+                                                                            sx={{ width: "180px" }}
+                                                                        />
+                                                                    </Box>
+                                                                }
+                                                            />
+                                                            <Button
+                                                                onClick={() => handleRemovePreviousMinistry(idx, i)}
+                                                                size="small"
+                                                                color="error"
+                                                                disabled={committing}
+                                                            >
+                                                                Remove
+                                                            </Button>
+                                                        </Box>
+                                                    ) : (
+                                                        <Button
+                                                            onClick={() => handleAddPreviousMinistry(idx, i)}
+                                                            size="small"
+                                                            sx={{ mt: 1 }}
+                                                            disabled={committing}
+                                                        >
+                                                            ➕ Add Previous Ministry
+                                                        </Button>
+                                                    )}
+                                                </Box>
+                                            ))
+                                        ) : (
+                                            // No departments yet - show message and Add Department button
+                                            <Box
+                                                ml={3}
+                                                mb={2}
+                                                sx={{
+                                                    bgcolor: "#f0f4c3",
+                                                    borderRadius: 2,
+                                                    p: 2,
+                                                    boxShadow: 1,
+                                                    borderLeft: "4px solid #afb42b",
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    fontStyle: "italic",
+                                                    color: "rgba(0,0,0,0.6)",
+                                                }}
+                                            >
+                                                <Typography>No departments added yet.</Typography>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    onClick={() => handleAddDepartment(idx, -1)}
+                                                    disabled={committing}
+                                                    sx={{ borderColor: "#afb42b", color: "#afb42b" }}
+                                                    aria-label="Add Department"
+                                                >
+                                                    ➕ Add Department
                                                 </Button>
                                             </Box>
-                                        ) : (
-                                            <Button
-                                                onClick={() => handleAddPreviousMinistry(idx, i)}
-                                                size="small"
-                                                sx={{ mt: 1 }}
-                                                disabled={committing}
-                                            >
-                                                ➕ Add Previous Ministry
-                                            </Button>
                                         )}
-                                    </Box>
-                                ))}
-
-                                <Divider sx={{ my: 2 }} />
+                                    </>
+                                )}
                             </Box>
                         ))}
 
@@ -415,15 +548,26 @@ const InitialTransactionPreview = ({
                             onClick={handleApproveCommit}
                             disabled={committing}
                         >
-                            {committing ? 'Committing...' : 'Approve & Commit Gazette'}
+                            {committing ? "Committing..." : "Approve & Commit Gazette"}
                         </Button>
                     </Box>
 
                     {moveList.length > 0 && (
-                        <Box sx={{ flex: 1, bgcolor: '#f5f5f5', p: 2, borderRadius: 2, height: 'fit-content' }}>
-                            <Typography variant="subtitle1" gutterBottom>🔄 Departments Marked as Moves</Typography>
+                        <Box
+                            sx={{
+                                flex: 1,
+                                bgcolor: "#f5f5f5",
+                                p: 3,
+                                borderRadius: 2,
+                                height: "fit-content",
+                                boxShadow: 1,
+                            }}
+                        >
+                            <Typography variant="subtitle1" gutterBottom>
+                                🔄 Departments Marked as Moves
+                            </Typography>
                             {moveList.map(({ dName, prevMinistry, mName }, i) => (
-                                <Typography key={i} variant="body2">
+                                <Typography key={i} variant="body2" sx={{ mb: 0.8 }}>
                                     `` {dName} from {prevMinistry} to {mName}
                                 </Typography>
                             ))}
@@ -433,6 +577,7 @@ const InitialTransactionPreview = ({
             </Paper>
         </Box>
     );
+
 };
 
 export default InitialTransactionPreview;
