@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import {
-    Box, Typography, Paper, Button, Divider, FormControlLabel, Checkbox, TextField, IconButton,
-} from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Button, Divider, FormControlLabel, Checkbox, TextField, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import axios from 'axios';
 import RemoveIcon from '@mui/icons-material/Remove';
+import axios from 'axios';
 
 const InitialTransactionPreview = ({
     selectedGazette,
@@ -18,6 +16,28 @@ const InitialTransactionPreview = ({
 
     const gazette = data?.presidents?.[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
     if (!gazette || !Array.isArray(selectedGazette)) return null;
+
+    // Automatically show previous ministry inputs for departments
+    // that have a previous_ministry from backend but show_previous_ministry is falsey
+    useEffect(() => {
+        if (!gazette || !gazette.transactions) return;
+
+        const updatedData = JSON.parse(JSON.stringify(data));
+        let changed = false;
+
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions.forEach(minister => {
+            minister.departments.forEach(dept => {
+                if (dept.previous_ministry && dept.previous_ministry.trim() && !dept.show_previous_ministry) {
+                    dept.show_previous_ministry = true;
+                    changed = true;
+                }
+            });
+        });
+
+        if (changed) {
+            setData(updatedData);
+        }
+    }, [data, selectedPresidentIndex, selectedGazetteIndex, gazette, setData]);
 
     const moveList = gazette.moves || [];
 
@@ -62,6 +82,42 @@ const InitialTransactionPreview = ({
         setData(updatedData);
     };
 
+    const handleAddPreviousMinistry = (ministerIndex, deptIndex) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const dept = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex]
+            .transactions[ministerIndex].departments[deptIndex];
+
+        dept.show_previous_ministry = true;
+        if (dept.previous_ministry === undefined || dept.previous_ministry === null) {
+            dept.previous_ministry = '';
+        }
+
+        setData(updatedData);
+    };
+
+    const handleRemovePreviousMinistry = (ministerIndex, deptIndex) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const dept = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex]
+            .transactions[ministerIndex].departments[deptIndex];
+
+        // Hide the previous ministry UI and clear the field
+        dept.show_previous_ministry = false;
+        dept.previous_ministry = '';
+
+        // Remove from moveList if marked
+        const ministerName = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex]
+            .transactions[ministerIndex].name;
+        const key = makeKey(ministerName, dept.name);
+
+        const updatedMoves = (updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || []).filter(
+            (item) => makeKey(item.mName, item.dName) !== key
+        );
+
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
+
+        setData(updatedData);
+    };
+
     const handleToggleMove = (ministerName, departmentName, previousMinistry) => {
         const key = makeKey(ministerName, departmentName);
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -82,7 +138,8 @@ const InitialTransactionPreview = ({
 
         departments.splice(deptIndex + 1, 0, {
             name: '',
-            previous_ministry: ''
+            previous_ministry: '',
+            show_previous_ministry: false,
         });
 
         setData(updatedData);
@@ -93,11 +150,23 @@ const InitialTransactionPreview = ({
         const departments = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].departments;
 
         if (departments.length > 1) {
+            // Get the name of the department to be deleted
+            const deptToDelete = departments[deptIndex];
+            const ministerName = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions[ministerIndex].name;
+            const keyToDelete = makeKey(ministerName, deptToDelete.name);
+
+            // Remove department from list
             departments.splice(deptIndex, 1);
+
+            // Remove from moveList if exists
+            const updatedMoves = (updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || []).filter(
+                (item) => makeKey(item.mName, item.dName) !== keyToDelete
+            );
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
+
             setData(updatedData);
         }
     };
-
 
     const handleApproveCommit = async () => {
         setCommitting(true);
@@ -108,7 +177,7 @@ const InitialTransactionPreview = ({
             name: minister.name,
             departments: minister.departments.map(dept => {
                 const key = `${dept.name}::${minister.name}`;
-                if (movedDepartmentsSet.has(key)) {
+                if (movedDepartmentsSet.has(key) && dept.previous_ministry?.trim()) {
                     return {
                         name: dept.name,
                         previous_ministry: dept.previous_ministry,
@@ -195,29 +264,48 @@ const InitialTransactionPreview = ({
                                             </IconButton>
                                         </Box>
 
-                                        {dept.previous_ministry && (
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        checked={isMoved(min.name, dept.name)}
-                                                        onChange={() => handleToggleMove(min.name, dept.name, dept.previous_ministry)}
-                                                        disabled={committing}
-                                                    />
-                                                }
-                                                label={
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                        <span>Mark as a move from previous </span>
-                                                        <TextField
-                                                            variant="standard"
-                                                            value={dept.previous_ministry}
-                                                            onChange={(e) => handlePreviousMinistryChange(idx, i, e.target.value)}
-                                                            disabled={committing}
-                                                            size="small"
-                                                            sx={{ width: '180px' }}
+                                        {dept.show_previous_ministry ? (
+                                            <Box display="flex" alignItems="center" gap={2} mt={1}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={isMoved(min.name, dept.name)}
+                                                            onChange={() => handleToggleMove(min.name, dept.name, dept.previous_ministry)}
+                                                            disabled={committing || !(dept.previous_ministry && dept.previous_ministry.trim())}
                                                         />
-                                                    </span>
-                                                }
-                                            />
+                                                    }
+                                                    label={
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <span>Mark as a move from previous</span>
+                                                            <TextField
+                                                                variant="standard"
+                                                                value={dept.previous_ministry}
+                                                                onChange={(e) => handlePreviousMinistryChange(idx, i, e.target.value)}
+                                                                disabled={committing}
+                                                                size="small"
+                                                                sx={{ width: '180px' }}
+                                                            />
+                                                        </span>
+                                                    }
+                                                />
+                                                <Button
+                                                    onClick={() => handleRemovePreviousMinistry(idx, i)}
+                                                    size="small"
+                                                    color="error"
+                                                    disabled={committing}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </Box>
+                                        ) : (
+                                            <Button
+                                                onClick={() => handleAddPreviousMinistry(idx, i)}
+                                                size="small"
+                                                sx={{ mt: 1 }}
+                                                disabled={committing}
+                                            >
+                                                ➕ Add Previous Ministry
+                                            </Button>
                                         )}
                                     </Box>
                                 ))}
