@@ -252,6 +252,19 @@ const InitialTransactionPreview = ({
         setData(updatedData);
     };
 
+    const handleRemoveMove = (mName, dName) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const moves = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [];
+
+        // Filter out the move to remove
+        const filteredMoves = moves.filter(
+            (item) => !(item.mName === mName && item.dName === dName)
+        );
+
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = filteredMoves;
+        setData(updatedData);
+    };
+
 
     const handleApproveCommit = async () => {
         setCommitting(true);
@@ -555,23 +568,59 @@ const InitialTransactionPreview = ({
                         <Box
                             sx={{
                                 flex: 1,
-                                bgcolor: "#f5f5f5",
+                                bgcolor: "#fafafa",
+                                border: "1px solid #ddd",
                                 p: 3,
-                                borderRadius: 2,
+                                borderRadius: 3,
+                                boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
                                 height: "fit-content",
-                                boxShadow: 1,
+                                maxHeight: 300,
+                                overflowY: "auto",
                             }}
                         >
-                            <Typography variant="subtitle1" gutterBottom>
-                                🔄 Departments Marked as Moves
-                            </Typography>
-                            {moveList.map(({ dName, prevMinistry, mName }, i) => (
-                                <Typography key={i} variant="body2" sx={{ mb: 0.8 }}>
-                                    `` {dName} from {prevMinistry} to {mName}
+                            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                                <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
+                                    🔄 Departments Marked as Moves (instead of Adds)
                                 </Typography>
+                            </Box>
+
+                            {moveList.map(({ dName, prevMinistry, mName }, i) => (
+                                <Box
+                                    key={i}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        backgroundColor: "#e8f0fe",
+                                        borderRadius: 2,
+                                        p: 1.2,
+                                        mb: 1,
+                                        boxShadow: "inset 0 0 5px rgba(25, 118, 210, 0.2)",
+                                        transition: "background-color 0.2s",
+                                        "&:hover": {
+                                            backgroundColor: "#d0dffe",
+                                        },
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        “{dName}” moved from <strong>{prevMinistry}</strong> to <strong>{mName}</strong>
+                                    </Typography>
+                                    <IconButton
+                                        size="medium"
+                                        color="error"
+                                        onClick={() => handleRemoveMove(mName, dName)}
+                                        aria-label={`Remove move ${dName} from ${mName}`}
+                                        sx={{ ml: 1 }}
+                                        title="Remove this move"
+                                    >
+                                        <RemoveIcon fontSize="medium" />
+                                    </IconButton>
+                                </Box>
                             ))}
                         </Box>
                     )}
+
+
                 </Box>
             </Paper>
         </Box>
