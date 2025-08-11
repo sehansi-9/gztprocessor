@@ -327,6 +327,7 @@ const InitialTransactionPreview = ({
             >
                 🔄 Refresh Transactions
             </Button>
+             {selectedGazette.length > 0 && (
             <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
                 <Box sx={{ display: "flex", flexDirection: "row", gap: 5 }}>
                     <Box sx={{ flex: 1 }}>
@@ -558,6 +559,7 @@ const InitialTransactionPreview = ({
                             </Box>
                         ))}
 
+                       
                         <Button
                             variant="contained"
                             color="success"
@@ -567,6 +569,7 @@ const InitialTransactionPreview = ({
                         >
                             {committing ? "Committing..." : "Approve & Commit Gazette"}
                         </Button>
+                        
                     </Box>
 
                     {moveList.length > 0 && (
@@ -585,7 +588,7 @@ const InitialTransactionPreview = ({
                         >
                             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                                 <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                                    🔄 Departments Marked as Moves (instead of Adds)
+                                    Departments Marked as Moves
                                 </Typography>
                             </Box>
 
@@ -628,6 +631,7 @@ const InitialTransactionPreview = ({
 
                 </Box>
             </Paper>
+             )}
         </Box>
     );
 
