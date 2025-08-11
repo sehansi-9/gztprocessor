@@ -12,7 +12,8 @@ const InitialTransactionPreview = ({
     selectedPresidentIndex,
     selectedGazetteIndex,
     setData,
-    setRefreshFlag
+    setRefreshFlag,
+    onGazetteCommitted,
 }) => {
     const [committing, setCommitting] = useState(false);
 
@@ -301,6 +302,10 @@ const InitialTransactionPreview = ({
             setRefreshFlag(prev => !prev);
 
             alert('✅ Gazette committed successfully! The data will refresh from backend.');
+            if (onGazetteCommitted) {
+                onGazetteCommitted(selectedGazetteIndex);
+            }
+
         } catch (error) {
             console.error('Error committing gazette:', error);
             alert('❌ Failed to commit gazette. Please try again.');

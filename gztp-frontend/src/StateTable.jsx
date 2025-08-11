@@ -78,6 +78,10 @@ export default function StateTable() {
     const [loading, setLoading] = useState(false);
     const [expanded, setExpanded] = useState(true);
     const [refreshFlag, setRefreshFlag] = useState(false);
+    const [gazetteWarnings, setGazetteWarnings] = useState(() => {
+        // Initially, no warnings
+        return data.presidents[selectedPresidentIndex]?.gazettes?.map(() => false) || [];
+    });
 
     const presidents = data.presidents || [];
     const selectedPresident = presidents[selectedPresidentIndex];
@@ -169,6 +173,23 @@ export default function StateTable() {
         fetchGazettes();
     }, []);
 
+    const handleGazetteCommitted = (committedIndex) => {
+        setGazetteWarnings((prev) => {
+            const gazettes = data.presidents[selectedPresidentIndex]?.gazettes || [];
+            const newWarnings = prev.slice();
+
+            // Clear warning on committed gazette
+            newWarnings[committedIndex] = false;
+
+            // Mark all gazettes after committedIndex as needing redo
+            for (let i = committedIndex + 1; i < gazettes.length; i++) {
+                newWarnings[i] = true;
+            }
+
+            return newWarnings;
+        });
+    };
+
 
     return (
         <Box p={4} sx={{ maxWidth: '1000px', mx: 'auto' }}>
@@ -221,7 +242,7 @@ export default function StateTable() {
                         {selectedPresident.gazettes.map((gazette, gIdx) => (
                             <Box
                                 key={gIdx}
-                                sx={{ display: 'inline-block', mr: 2 }}
+                                sx={{ display: 'inline-block', mr: 2, position: 'relative' }}
                             >
                                 <Paper
                                     elevation={gIdx === selectedGazetteIndex ? 6 : 1}
@@ -234,7 +255,6 @@ export default function StateTable() {
                                         border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
                                         backgroundColor: gIdx === selectedGazetteIndex ? '#e0e8f0ff' : 'white',
                                         display: 'inline-block',
-
                                     }}
                                 >
                                     <Typography variant="body2" fontWeight="medium">
@@ -244,8 +264,27 @@ export default function StateTable() {
                                         {gazette.date}
                                     </Typography>
                                 </Paper>
+
+                                {/* Warning icon for gazettes with warnings */}
+                                {gazetteWarnings[gIdx] && (
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 4,
+                                            right: 4,
+                                            color: '#d32f2f',
+                                            fontSize: '18px',
+                                            pointerEvents: 'none',
+                                        }}
+                                        title="This gazette must be redone because of earlier changes"
+                                    >
+                                        ⚠️
+                                    </Box>
+                                )}
+
                             </Box>
                         ))}
+
                         <AddGazette
                             onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions }) => {
                                 const newGazette = {
@@ -382,6 +421,7 @@ export default function StateTable() {
                         selectedGazetteIndex={selectedGazetteIndex}
                         setData={setData}
                         setRefreshFlag={setRefreshFlag}
+                        onGazetteCommitted={handleGazetteCommitted}
                     />
                 </>
             ) : (
