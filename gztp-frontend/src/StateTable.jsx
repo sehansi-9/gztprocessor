@@ -190,6 +190,13 @@ export default function StateTable() {
         });
     };
 
+    const getLatestUpdatedState = () => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const currentPresident = data.presidents[selectedPresidentIndex];
+        const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
+        setData(updatedData);
+    }
 
     return (
         <Box p={4} sx={{ maxWidth: '1000px', mx: 'auto' }}>
@@ -352,121 +359,137 @@ export default function StateTable() {
                         </Search>
 
                         {/* Table */}
-                       {loading ? (
-  <Box display="flex" justifyContent="center" mt={4}>
-    <CircularProgress />
-  </Box>
-) : !selectedGazette?.ministers ? (
-  <Paper
-    sx={{
-      p: 4,
-      mt: 4,
-      borderRadius: 3,
-      boxShadow: 3,
-      textAlign: 'center',
-      bgcolor: '#fff3cd', // light warning bg
-      color: '#856404', // dark warning text
-    }}
-  >
-    <Typography variant="h6" gutterBottom>⚠️ No ministers available for this gazette.</Typography>
-    <Typography variant="body2">Please select another gazette or add ministers.</Typography>
-  </Paper>
-) : (
-  <TableContainer
-    component={Paper}
-    sx={{
-      borderRadius: 4,
-      mt: 2,
-      boxShadow: 4,
-      maxHeight: 300,
-      overflowY: 'auto',
-      bgcolor: 'background.paper',
-      border: '1px solid #ddd',
-    }}
-  >
-    <Table stickyHeader aria-label="ministers table">
-      <TableHead
-        sx={{
-          backgroundColor: '#1976d2',
-        }}
-      >
-        <TableRow>
-          <TableCell
-            sx={{
-              fontWeight: 'bold',
-              color: 'black',
-              fontSize: '1rem',
-              py: 1.5,
-              px: 2,
-              borderBottom: 'none',
-            }}
-          >
-            Minister
-          </TableCell>
-          <TableCell
-            sx={{
-              fontWeight: 'bold',
-              color: 'black',
-              fontSize: '1rem',
-              py: 1.5,
-              px: 2,
-              borderBottom: 'none',
-            }}
-          >
-            Departments
-          </TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {filteredMinisters.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={2} sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                No matching records found.
-              </Typography>
-            </TableCell>
-          </TableRow>
-        ) : (
-          filteredMinisters.map((minister, idx) => (
-            <TableRow
-              hover
-              key={idx}
-              sx={{
-                bgcolor: idx % 2 === 0 ? 'action.hover' : 'background.default',
-              }}
-            >
-              <TableCell
-                sx={{ py: 1.5, px: 2, minWidth: 150 }}
-                dangerouslySetInnerHTML={{
-                  __html: `${idx + 1}. ${highlightMatch(minister.name, searchQuery)}`,
-                }}
-              />
-              <TableCell sx={{ py: 1.5, px: 2 }}>
-                <ol
-                  style={{
-                    margin: 0,
-                    paddingLeft: '1.25rem',
-                    fontSize: '0.9rem',
-                    color: '#444',
-                    listStyleType: 'decimal',
-                  }}
-                >
-                  {minister.departments.map((dept, dIdx) => (
-                    <li
-                      key={dIdx}
-                      dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }}
-                      style={{ marginBottom: '0.25rem' }}
-                    />
-                  ))}
-                </ol>
-              </TableCell>
-            </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
-  </TableContainer>
-)}
+                        {loading ? (
+                            <Box display="flex" justifyContent="center" mt={4}>
+                                <CircularProgress />
+                            </Box>
+                        ) : !selectedGazette?.ministers ? (
+                            <Paper
+                                sx={{
+                                    p: 4,
+                                    mt: 4,
+                                    borderRadius: 3,
+                                    boxShadow: 3,
+                                    textAlign: 'center',
+                                    bgcolor: '#fff3cd', // light warning bg
+                                    color: '#856404', // dark warning text
+                                }}
+                            >
+                                <Typography variant="h6" gutterBottom>⚠️ No ministers available for this gazette.</Typography>
+                                <Typography variant="body2">Please select another gazette or add ministers.</Typography>
+                            </Paper>
+                        ) : (
+                            <TableContainer
+                                component={Paper}
+                                sx={{
+                                    borderRadius: 4,
+                                    mt: 2,
+                                    boxShadow: 4,
+                                    maxHeight: 300,
+                                    overflowY: 'auto',
+                                    bgcolor: 'background.paper',
+                                    border: '1px solid #ddd',
+                                }}
+                            >
+                                <Table stickyHeader aria-label="ministers table">
+                                    <TableHead sx={{ backgroundColor: '#1976d2' }}>
+                                        <TableRow>
+                                            <TableCell
+                                                sx={{
+                                                    fontWeight: 'bold',
+                                                    color: 'black',
+                                                    fontSize: '1rem',
+                                                    py: 1.5,
+                                                    px: 2,
+                                                    borderBottom: 'none',
+                                                }}
+                                            >
+                                                Minister
+                                            </TableCell>
+
+                                            <TableCell
+                                                sx={{
+                                                    fontWeight: 'bold',
+                                                    color: 'black',
+                                                    fontSize: '1rem',
+                                                    py: 1.5,
+                                                    px: 2,
+                                                    borderBottom: 'none',
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        width: '100%',
+                                                    }}
+                                                >
+                                                    Departments
+                                                    {gazetteWarnings[selectedGazetteIndex] && (
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            onClick={() => getLatestUpdatedState()}
+                                                        >
+                                                            Get latest updated state
+                                                        </Button>
+                                                    )}
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableHead>
+
+                                    <TableBody>
+                                        {filteredMinisters.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={2} sx={{ textAlign: 'center', py: 3 }}>
+                                                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                                        No matching records found.
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filteredMinisters.map((minister, idx) => (
+                                                <TableRow
+                                                    hover
+                                                    key={idx}
+                                                    sx={{
+                                                        bgcolor: idx % 2 === 0 ? 'action.hover' : 'background.default',
+                                                    }}
+                                                >
+                                                    <TableCell
+                                                        sx={{ py: 1.5, px: 2, minWidth: 150 }}
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: `${idx + 1}. ${highlightMatch(minister.name, searchQuery)}`,
+                                                        }}
+                                                    />
+                                                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                                                        <ol
+                                                            style={{
+                                                                margin: 0,
+                                                                paddingLeft: '1.25rem',
+                                                                fontSize: '0.9rem',
+                                                                color: '#444',
+                                                                listStyleType: 'decimal',
+                                                            }}
+                                                        >
+                                                            {minister.departments.map((dept, dIdx) => (
+                                                                <li
+                                                                    key={dIdx}
+                                                                    dangerouslySetInnerHTML={{ __html: highlightMatch(dept, searchQuery) }}
+                                                                    style={{ marginBottom: '0.25rem' }}
+                                                                />
+                                                            ))}
+                                                        </ol>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
 
                     </Collapse>
                     <InitialTransactionPreview
