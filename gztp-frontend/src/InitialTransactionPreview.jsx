@@ -42,7 +42,7 @@ const InitialTransactionPreview = ({
 
         const updatedData = JSON.parse(JSON.stringify(data));
         let changed = false;
-
+        
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions.forEach(minister => {
             minister.departments.forEach(dept => {
                 if (dept.previous_ministry && dept.previous_ministry.trim() && !dept.show_previous_ministry) {
@@ -67,20 +67,26 @@ const InitialTransactionPreview = ({
     };
 
     const handleRefresh = async () => {
-        const endpoint = `http://localhost:8000/mindep/initial/${gazette.date}/${gazette.number}`;
-        try {
-            const response = await axios.get(endpoint);
+    try {
+        const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
+        const info = infoResponse.data;
 
-            const updatedData = JSON.parse(JSON.stringify(data));
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
+        const gazetteType = info.gazette_type;
+        const gazetteFormat = info.gazette_format;
 
-            setData(updatedData);
-        } catch (error) {
-            console.error('Error refetching gazette:', error);
-            alert('❌ Failed to refetch gazette. Check the console for details.');
-        }
-    };
+        const endpoint = `http://localhost:8000/${gazetteType}/${gazetteFormat}/${gazette.date}/${gazette.number}`;
+        const response = await axios.get(endpoint);
+
+        const updatedData = JSON.parse(JSON.stringify(data));
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
+
+        setData(updatedData);
+    } catch (error) {
+        console.error('Error refetching gazette:', error);
+        alert('❌ Failed to refetch gazette. Check the console for details.');
+    }
+};
 
     const handleMinisterNameChange = (index, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));

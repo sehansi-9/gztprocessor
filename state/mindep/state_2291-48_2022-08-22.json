@@ -1,0 +1,98 @@
+{
+  "ministers": [
+    {
+      "name": "Minister of Defence",
+      "departments": [
+        "Api Wenuwen Api Fund",
+        "Civil Security Department",
+        "Coast Guard Department",
+        "Defence Research Centre",
+        "Department of Meteorology",
+        "Disaster Management Centre",
+        "Department of Inland Revenue",
+        "Sri Lanka Army",
+        "Sri Lanka Navy",
+        "State Intelligence Service"
+      ]
+    },
+    {
+      "name": "Minister of Finance",
+      "departments": [
+        "Central Bank of Sri Lanka",
+        "National Cadet Corps",
+        "Department of Inland Revenue",
+        "Department of Customs",
+        "Public Debt Management Office",
+        "Securities and Exchange Commission",
+        "National Lotteries Board",
+        "Employees’ Trust Fund",
+        "General Treasury",
+        "Insurance Regulatory Commission",
+        "Sri Lanka Export Development Board"
+      ]
+    },
+    {
+      "name": "Minister of Energy",
+      "departments": [
+        "Ceylon Electricity Board",
+        "Ceylon Petroleum Corporation"
+      ]
+    },
+    {
+      "name": "Minister of Agriculture",
+      "departments": [
+        "Department of Agriculture"
+      ]
+    },
+    {
+      "name": "Minister of Justice",
+      "departments": [
+        "Attorney General’s Department",
+        "Department of Prisons",
+        "Department of Legal Affairs",
+        "Legal Aid Commission"
+      ]
+    },
+    {
+      "name": "Minister of Education",
+      "departments": [
+        "Department of Examinations",
+        "Department of Education Publications",
+        "Teacher Training Institute"
+      ]
+    },
+    {
+      "name": "Minister of Health",
+      "departments": [
+        "Nutrition Division",
+        "Traditional Medicine Authority",
+        "Disease Control Unit"
+      ]
+    },
+    {
+      "name": "Minister of Transport",
+      "departments": [
+        "Department of Motor Traffic",
+        "Sri Lanka Railways",
+        "National Transport Commission",
+        "Vehicle Registration Office"
+      ]
+    },
+    {
+      "name": "Minister of Environment",
+      "departments": [
+        "Central Environmental Authority",
+        "Sustainable Development Council",
+        "Water Resources Board"
+      ]
+    },
+    {
+      "name": "Minister of Labour",
+      "departments": [
+        "Department of Labour",
+        "Social Security Board",
+        "Vocational Rehabilitation Centre"
+      ]
+    }
+  ]
+}

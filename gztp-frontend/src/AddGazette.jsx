@@ -32,7 +32,7 @@ const AddGazette = ({ onAdd }) => {
     const handleSubmit = async () => {
         if (!gazetteNumber || !gazetteDate || !gazetteType) return;
 
-        const endpoint = `http://localhost:8000/mindep/${gazetteType === 'initial-tabular' ? 'initial' : 'amendment'}/${gazetteDate}/${gazetteNumber}`;
+        const endpoint = `http://localhost:8000/mindep/${gazetteType === 'initial' ? 'initial' : 'amendment'}/${gazetteDate}/${gazetteNumber}`;
         try {
             setLoading(true);
             const response = await axios.get(endpoint);
@@ -93,7 +93,7 @@ const AddGazette = ({ onAdd }) => {
                         onChange={(e) => setGazetteType(e.target.value)}
                         sx={{ mt: 2 }}
                     >
-                        <FormControlLabel value="initial-tabular" control={<Radio />} label="Initial" />
+                        <FormControlLabel value="initial" control={<Radio />} label="Initial" />
                         <FormControlLabel value="amendment" control={<Radio />} label="Amendment" />
                     </RadioGroup>
                 </DialogContent>

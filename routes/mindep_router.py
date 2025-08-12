@@ -6,6 +6,7 @@ from typing import List
 from gztprocessor.state_managers.mindep_state_manager import MindepStateManager
 import gztprocessor.gazette_processors.mindep_gazette_processor as mindep_gazette_processor
 import gztprocessor.database_handlers.mindep_database_handler as mindep_database
+import gztprocessor.database_handlers.transaction_database_handler as trans_database
 import gztprocessor.csv_writer as csv_writer
 from routes.state_router import create_state_routes
 import utils as utils
@@ -24,6 +25,7 @@ def get_contents_of_initial_gazette(gazette_number: str, date: str):
     try:
         data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date)
         data = mindep_gazette_processor.extract_initial_gazette_data(gazette_number, date, data)
+        trans_database.create_record(gazette_number,"mindep","initial")
         return data
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
