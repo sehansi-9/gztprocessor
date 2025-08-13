@@ -20,7 +20,7 @@ const InitialTransactionPreview = ({
     // Track which ministers are expanded (show departments)
     const [expandedMinisters, setExpandedMinisters] = useState(() => {
         return selectedGazette.reduce((acc, _, i) => {
-            acc[i] = true; // default all expanded, change if you want all collapsed initially
+            acc[i] = false; // default all expanded, change if you want all collapsed initially
             return acc;
         }, {});
     });
