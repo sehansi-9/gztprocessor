@@ -152,7 +152,7 @@ export default function StateTable() {
                 const draftGazettes = resDraft.data || [];
                 console.log('Drafts:', draftGazettes);
 
-                // Map committed with flag
+                // Map committed
                 const enrichedCommitted = committedGazettes.map(g => ({
                     number: g.gazette_number,
                     date: g.date,
@@ -161,34 +161,46 @@ export default function StateTable() {
                     transactions: null,
                     terminates: [],
                     moves: [],
-                    adds: []
+                    adds: [],
+                    warning: false
                 }));
 
-                // Build a Set of committed gazette numbers for quick lookup
+                // Map drafts and normalize warning to a real boolean
+                const enrichedDrafts = draftGazettes.map(g => ({
+                    number: g.gazette_number,
+                    date: g.date,
+                    committed: false,
+                    ministers: null,
+                    transactions: null,
+                    terminates: [],
+                    moves: [],
+                    adds: [],
+                    warning: Boolean(Number(g.warning))
+                }));
+
+                // Attach draft warnings to committed if both exist
+                enrichedCommitted.forEach(cGazette => {
+                    const draftMatch = enrichedDrafts.find(dGazette => dGazette.number === cGazette.number);
+                    if (draftMatch) {
+                        cGazette.warning = draftMatch.warning;
+                    }
+                });
+
+                // Filter out drafts that have a committed counterpart
                 const committedNumbers = new Set(enrichedCommitted.map(g => g.number));
+                const filteredDrafts = enrichedDrafts.filter(g => !committedNumbers.has(g.number));
 
-                // Filter out drafts that have a committed counterpart, then enrich
-                const enrichedDrafts = draftGazettes
-                    .filter(g => !committedNumbers.has(g.gazette_number))
-                    .map(g => ({
-                        number: g.gazette_number,
-                        date: g.date,
-                        committed: false,
-                        ministers: null,
-                        transactions: null,
-                        terminates: [],
-                        moves: [],
-                        adds: []
-                    }));
-
-                const allGazettes = [...enrichedCommitted, ...enrichedDrafts]
+                const allGazettes = [...enrichedCommitted, ...filteredDrafts]
                     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-                // Deep clone your existing data
+                // Update main data state
                 const updated = JSON.parse(JSON.stringify(Data));
                 updated.presidents[selectedPresidentIndex].gazettes = allGazettes;
-
                 setData(updated);
+
+                // Sync warning array with fetched data
+                setGazetteWarnings(allGazettes.map(g => g.warning || false));
+
             } catch (err) {
                 console.error("Failed to fetch gazettes:", err);
             }
@@ -196,6 +208,8 @@ export default function StateTable() {
 
         fetchGazettes();
     }, []);
+
+
 
     const handleGazetteCommitted = (committedIndex) => {
         setGazetteWarnings((prev) => {
@@ -205,14 +219,28 @@ export default function StateTable() {
             // Clear warning on committed gazette
             newWarnings[committedIndex] = false;
 
+            // Persist updated warning to drafts table
+            const committedGazette = gazettes[committedIndex];
+            axios.post(
+                `http://localhost:8000/transactions/${committedGazette.number}/warning`,
+                { warning: false }
+            ).catch(err => console.error("Failed to update warning:", err));
+
             // Mark all gazettes after committedIndex as needing redo
             for (let i = committedIndex + 1; i < gazettes.length; i++) {
                 newWarnings[i] = true;
+
+                // Persist warning to drafts table
+                axios.post(
+                    `http://localhost:8000/transactions/${gazettes[i].number}/warning`,
+                    { warning: true }
+                ).catch(err => console.error("Failed to update warning:", err));
             }
 
             return newWarnings;
         });
     };
+
 
     const getLatestUpdatedState = () => {
         const updatedData = JSON.parse(JSON.stringify(data));

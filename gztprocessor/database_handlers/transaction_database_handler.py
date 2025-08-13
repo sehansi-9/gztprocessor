@@ -57,7 +57,7 @@ def get_gazettes_by_president(gazette_type: str, from_date: str, to_date: str):
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT gazette_number, gazette_date 
+            SELECT gazette_number, gazette_date, warning
             FROM transactions 
             WHERE gazette_type = ? 
               AND gazette_date >= ? 
@@ -67,4 +67,23 @@ def get_gazettes_by_president(gazette_type: str, from_date: str, to_date: str):
             (gazette_type, from_date, to_date)
         )
         rows = cur.fetchall()
-        return [{"gazette_number": r[0], "date": r[1]} for r in rows]
+        return [{"gazette_number": r[0], "date": r[1], "warning":  bool(r[2])} for r in rows]
+
+def set_warning(gazette_number: str, warning: bool):
+    """
+    Set or clear the warning flag for a given gazette number.
+    
+    :param gazette_number: The gazette number to update
+    :param warning: True to set warning, False to clear it
+    """
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE transactions
+            SET warning = ?
+            WHERE gazette_number = ?
+            """,
+            (1 if warning else 0, gazette_number)
+        )
+        conn.commit()
