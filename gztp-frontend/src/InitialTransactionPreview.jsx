@@ -275,9 +275,15 @@ const InitialTransactionPreview = ({
     };
 
     function handleSave() {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const updatedGazette = {
+            transactions: selectedGazette || [],
+            moves: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [],
+        };
+
         axios.post(
             `http://localhost:8000/transactions/${gazette.number}`,
-            selectedGazette,
+            updatedGazette,
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -289,18 +295,21 @@ const InitialTransactionPreview = ({
     }
 
 
+
     async function handleFetch() {
         try {
             const endpoint = `http://localhost:8000/transactions/${gazette.number}`;
             const response = await axios.get(endpoint);
 
-            let transactions = response.data.transactions;
-            if (typeof transactions === 'string') {
-                transactions = JSON.parse(transactions);
+            let dataFromDb = response.data;
+            // In case backend returns string, parse it
+            if (typeof dataFromDb === "string") {
+                dataFromDb = JSON.parse(dataFromDb);
             }
-            console.log(transactions)
+
             const updatedData = JSON.parse(JSON.stringify(data));
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = transactions;
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = dataFromDb.transactions || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = dataFromDb.moves || [];
 
             setData(updatedData);
         } catch (error) {

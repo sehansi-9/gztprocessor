@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 from fastapi import APIRouter
 from fastapi.params import Body
 
@@ -19,9 +19,9 @@ def get_gazette_info_route(gazette_number: str):
 
 
 @transaction_router.post("/transactions/{gazette_number}")
-def save_current_transactions(gazette_number: str, transactions_json: list = Body(...)):
-    transactions_str = json.dumps(transactions_json)
-    save_transactions(gazette_number, transactions_str)
+def save_current_transactions(gazette_number: str, payload: Dict[str, Any] = Body(...)):
+    # payload expected to be like: {"transactions": [...], "moves": [...]}
+    save_transactions(gazette_number, payload)
     return {"status": "success"}
 
 @transaction_router.get("/transactions/{gazette_number}")

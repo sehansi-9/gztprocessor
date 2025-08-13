@@ -29,17 +29,16 @@ def get_gazette_info(gazette_number: str):
         return {"gazette_type": row[0], "gazette_format": row[1]} if row else None
 
 
-def save_transactions(gazette_number: str, transactions_json: list):
+def save_transactions(gazette_number: str, data_json: dict):
     with get_connection() as conn:
         cur = conn.cursor()
         cur.execute(
             """
             UPDATE transactions SET transactions = ? WHERE gazette_number = ?
             """,
-            (json.dumps(transactions_json), gazette_number)
+            (json.dumps(data_json), gazette_number)
         )
         conn.commit()
-
 
 def get_saved_transactions(gazette_number: str):
     with get_connection() as conn:
@@ -50,8 +49,7 @@ def get_saved_transactions(gazette_number: str):
         )
         row = cur.fetchone()
         if not row or row[0] is None:
-            return {"transactions": []}
-        # parse JSON string before returning
-        return {"transactions": json.loads(row[0])}
+            return {"transactions": [], "moves": []}
+        return json.loads(row[0])  # Now returns entire saved object with transactions and moves
 
 
