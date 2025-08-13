@@ -42,7 +42,7 @@ const InitialTransactionPreview = ({
 
         const updatedData = JSON.parse(JSON.stringify(data));
         let changed = false;
-        
+
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions.forEach(minister => {
             minister.departments.forEach(dept => {
                 if (dept.previous_ministry && dept.previous_ministry.trim() && !dept.show_previous_ministry) {
@@ -67,26 +67,26 @@ const InitialTransactionPreview = ({
     };
 
     const handleRefresh = async () => {
-    try {
-        const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
-        const info = infoResponse.data;
+        try {
+            const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
+            const info = infoResponse.data;
 
-        const gazetteType = info.gazette_type;
-        const gazetteFormat = info.gazette_format;
+            const gazetteType = info.gazette_type;
+            const gazetteFormat = info.gazette_format;
 
-        const endpoint = `http://localhost:8000/${gazetteType}/${gazetteFormat}/${gazette.date}/${gazette.number}`;
-        const response = await axios.get(endpoint);
+            const endpoint = `http://localhost:8000/${gazetteType}/${gazetteFormat}/${gazette.date}/${gazette.number}`;
+            const response = await axios.get(endpoint);
 
-        const updatedData = JSON.parse(JSON.stringify(data));
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
+            const updatedData = JSON.parse(JSON.stringify(data));
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
 
-        setData(updatedData);
-    } catch (error) {
-        console.error('Error refetching gazette:', error);
-        alert('❌ Failed to refetch gazette. Check the console for details.');
-    }
-};
+            setData(updatedData);
+        } catch (error) {
+            console.error('Error refetching gazette:', error);
+            alert('❌ Failed to refetch gazette. Check the console for details.');
+        }
+    };
 
     const handleMinisterNameChange = (index, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -208,6 +208,7 @@ const InitialTransactionPreview = ({
 
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
         setData(updatedData);
+        console.log(selectedGazette)
     };
 
     const handleAddDepartment = (ministerIndex, deptIndex) => {
@@ -270,7 +271,43 @@ const InitialTransactionPreview = ({
 
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = filteredMoves;
         setData(updatedData);
+
     };
+
+    function handleSave() {
+        axios.post(
+            `http://localhost:8000/transactions/${gazette.number}`,
+            selectedGazette,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        )
+            .then(() => console.log("Saved successfully"))
+            .catch(err => console.error("Save failed", err));
+    }
+
+
+    async function handleFetch() {
+        try {
+            const endpoint = `http://localhost:8000/transactions/${gazette.number}`;
+            const response = await axios.get(endpoint);
+
+            let transactions = response.data.transactions;
+            if (typeof transactions === 'string') {
+                transactions = JSON.parse(transactions);
+            }
+            console.log(transactions)
+            const updatedData = JSON.parse(JSON.stringify(data));
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = transactions;
+
+            setData(updatedData);
+        } catch (error) {
+            console.error('Error refetching gazette:', error);
+            alert('❌ Failed to refetch gazette. Check the console for details.');
+        }
+    }
 
 
     const handleApproveCommit = async () => {
@@ -308,6 +345,7 @@ const InitialTransactionPreview = ({
             setRefreshFlag(prev => !prev);
 
             alert('✅ Gazette committed successfully! The data will refresh from backend.');
+            handleSave()
             if (onGazetteCommitted) {
                 onGazetteCommitted(selectedGazetteIndex);
             }
@@ -331,7 +369,23 @@ const InitialTransactionPreview = ({
                 color="primary"
                 sx={{ mb: 3 }}
             >
-                🔄 Refresh Transactions
+                🔄 Refresh
+            </Button>
+            <Button
+                onClick={handleFetch}
+                variant="outlined"
+                color="primary"
+                sx={{ mb: 3 }}
+            >
+                🔄 Refetch from last saved
+            </Button>
+            <Button
+                onClick={handleSave}
+                variant="outlined"
+                color="primary"
+                sx={{ mb: 3 }}
+            >
+                Save
             </Button>
             {selectedGazette.length > 0 && (
                 <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>

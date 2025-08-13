@@ -6,7 +6,7 @@ from gztprocessor.db_connections.db_person import init_db as init_person_db
 from gztprocessor.db_connections.db_trans import init_db as init_transaction_db
 from routes.mindep_router import mindep_router
 from routes.person_router import person_router
-from routes.general_router import general_router
+from routes.transaction_router import transaction_router
 from fastapi.middleware.cors import CORSMiddleware
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 app = FastAPI()
 app.include_router(mindep_router)
 app.include_router(person_router)
-app.include_router(general_router)
+app.include_router(transaction_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"], 
