@@ -61,36 +61,37 @@ class MindepStateManager(AbstractStateManager):
             )
         return snapshot
 
-
-    def get_all_gazette_numbers(self) -> list[dict]:
-      with self.get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
+    def get_all_gazette_numbers(self, from_date, to_date) -> list[dict]:
+        with self.get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
             SELECT gazette_number, date 
             FROM ministry
+            WHERE 
+              date >= ? 
+              AND date <= ?
             GROUP BY gazette_number, date
             ORDER BY date ASC
-        """
-        )
-        rows = cur.fetchall()
-        return [{"gazette_number": row[0], "date": row[1]} for row in rows]
-
+        """,
+                (from_date, to_date),
+            )
+            rows = cur.fetchall()
+            return [{"gazette_number": row[0], "date": row[1]} for row in rows]
 
     def export_state_snapshot(self, gazette_number: str, date_str: str):
-      state = self._get_state_from_db(
-        self.get_connection().cursor(), gazette_number, date_str
-    )
-      state_path = self.get_state_file_path(gazette_number, date_str)
-      with open(state_path, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
-      print(f"✅ Mindep snapshot exported to {state_path}")
-
+        state = self._get_state_from_db(
+            self.get_connection().cursor(), gazette_number, date_str
+        )
+        state_path = self.get_state_file_path(gazette_number, date_str)
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        print(f"✅ Mindep snapshot exported to {state_path}")
 
     def clear_db(self):
-     with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM department")
-        cur.execute("DELETE FROM ministry")
-        conn.commit()
-     print("🧹 Ministry and department tables cleared.")
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM department")
+            cur.execute("DELETE FROM ministry")
+            conn.commit()
+        print("🧹 Ministry and department tables cleared.")

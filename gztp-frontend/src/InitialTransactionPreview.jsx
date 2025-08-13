@@ -294,8 +294,6 @@ const InitialTransactionPreview = ({
             .catch(err => console.error("Save failed", err));
     }
 
-
-
     async function handleFetch() {
         try {
             const endpoint = `http://localhost:8000/transactions/${gazette.number}`;

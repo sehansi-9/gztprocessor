@@ -142,17 +142,21 @@ export default function StateTable() {
     useEffect(() => {
         const fetchGazettes = async () => {
             try {
-                const res = await axios.get('http://localhost:8000/mindep/state/gazettes');
-                const gazettes = res.data;
+                // Fetch committed gazettes
+                const resCommitted = await axios.get('http://localhost:8000/mindep/state/gazettes/2022-07-22/2022-08-22');
+                const committedGazettes = resCommitted.data || [];
+                console.log('Committed:', committedGazettes);
 
-                if (!gazettes || gazettes.length === 0) {
-                    console.error("⚠️ No gazettes found.");
-                    return;
-                }
+                // Fetch draft gazettes
+                const resDraft = await axios.get('http://localhost:8000/info/mindep/2022-07-22/2022-08-22');
+                const draftGazettes = resDraft.data || [];
+                console.log('Drafts:', draftGazettes);
 
-                const enrichedGazettes = gazettes.map((g) => ({
+                // Map committed with flag
+                const enrichedCommitted = committedGazettes.map(g => ({
                     number: g.gazette_number,
                     date: g.date,
+                    committed: true,
                     ministers: null,
                     transactions: null,
                     terminates: [],
@@ -160,12 +164,31 @@ export default function StateTable() {
                     adds: []
                 }));
 
-                const updated = JSON.parse(JSON.stringify(Data));
+                // Build a Set of committed gazette numbers for quick lookup
+                const committedNumbers = new Set(enrichedCommitted.map(g => g.number));
 
-                updated.presidents[selectedPresidentIndex].gazettes = enrichedGazettes;
+                // Filter out drafts that have a committed counterpart, then enrich
+                const enrichedDrafts = draftGazettes
+                    .filter(g => !committedNumbers.has(g.gazette_number))
+                    .map(g => ({
+                        number: g.gazette_number,
+                        date: g.date,
+                        committed: false,
+                        ministers: null,
+                        transactions: null,
+                        terminates: [],
+                        moves: [],
+                        adds: []
+                    }));
+
+                const allGazettes = [...enrichedCommitted, ...enrichedDrafts]
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                // Deep clone your existing data
+                const updated = JSON.parse(JSON.stringify(Data));
+                updated.presidents[selectedPresidentIndex].gazettes = allGazettes;
 
                 setData(updated);
-
             } catch (err) {
                 console.error("Failed to fetch gazettes:", err);
             }
@@ -173,6 +196,9 @@ export default function StateTable() {
 
         fetchGazettes();
     }, []);
+
+
+
 
     const handleGazetteCommitted = (committedIndex) => {
         setGazetteWarnings((prev) => {
@@ -250,7 +276,8 @@ export default function StateTable() {
                         {selectedPresident.gazettes.map((gazette, gIdx) => (
                             <Box
                                 key={gIdx}
-                                sx={{ display: 'inline-block', mr: 2, position: 'relative' }}
+                                sx={{ display: 'inline-block', mr: 2, position: 'relative', backgroundColor: gazette.committed ? 'green' : '#7c4646ff' }}
+
                             >
                                 <Paper
                                     elevation={gIdx === selectedGazetteIndex ? 6 : 1}

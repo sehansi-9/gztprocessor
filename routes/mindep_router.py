@@ -25,7 +25,7 @@ def get_contents_of_initial_gazette(gazette_number: str, date: str):
     try:
         data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date)
         data = mindep_gazette_processor.extract_initial_gazette_data(gazette_number, date, data)
-        trans_database.create_record(gazette_number,"mindep","initial")
+        trans_database.create_record(gazette_number,"mindep","initial", date)
         return data
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}

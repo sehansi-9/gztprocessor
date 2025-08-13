@@ -19,10 +19,10 @@ def create_state_routes(prefix: str, state_manager: AbstractStateManager) -> API
         except ValueError as e:
             return {"error": str(e)}
     
-    @router.get("/gazettes")
-    def get_all_gazettes():
+    @router.get("/gazettes/{from_date}/{to_date}")
+    def get_all_gazettes(from_date:str, to_date:str):
         try:
-            return state_manager.get_all_gazette_numbers()
+            return state_manager.get_all_gazette_numbers(from_date, to_date)
         except ValueError:
             return {"error": "No gazettes found"}
     
