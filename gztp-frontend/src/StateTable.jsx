@@ -197,9 +197,6 @@ export default function StateTable() {
         fetchGazettes();
     }, []);
 
-
-
-
     const handleGazetteCommitted = (committedIndex) => {
         setGazetteWarnings((prev) => {
             const gazettes = data.presidents[selectedPresidentIndex]?.gazettes || [];
@@ -276,7 +273,7 @@ export default function StateTable() {
                         {selectedPresident.gazettes.map((gazette, gIdx) => (
                             <Box
                                 key={gIdx}
-                                sx={{ display: 'inline-block', mr: 2, position: 'relative', backgroundColor: gazette.committed ? 'green' : '#7c4646ff' }}
+                                sx={{ display: 'inline-block', mr: 2, position: 'relative' }}
 
                             >
                                 <Paper
@@ -290,6 +287,7 @@ export default function StateTable() {
                                         border: gIdx === selectedGazetteIndex ? '2px solid #1976d2' : '1px solid #ddd',
                                         backgroundColor: gIdx === selectedGazetteIndex ? '#e0e8f0ff' : 'white',
                                         display: 'inline-block',
+                                        backgroundColor: gazette.committed ? '#cce8baff' : '#e7c6c6ff'
                                     }}
                                 >
                                     <Typography variant="body2" fontWeight="medium">

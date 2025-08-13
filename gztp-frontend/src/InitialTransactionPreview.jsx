@@ -348,7 +348,8 @@ const InitialTransactionPreview = ({
             const newData = JSON.parse(JSON.stringify(data));
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
             setData(newData);
-
+            newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].committed = true;
+            setData(newData);
             setRefreshFlag(prev => !prev);
 
             alert('✅ Gazette committed successfully! The data will refresh from backend.');
