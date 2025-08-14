@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography,Button} from '@mui/material';
+import { Box, Typography, Button, Paper } from '@mui/material';
 import axios from 'axios';
 import InitialPreview from './InitialPreview';
 
@@ -36,51 +36,34 @@ const TransactionPreview = ({
     const gazette = data?.presidents?.[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
     if (!gazette || !Array.isArray(transactions)) return null;
 
-    // Automatically show previous ministry inputs for departments
-    // that have a previous_ministry from backend but show_previous_ministry is falsey
-    useEffect(() => {
-        if (!gazette || !gazette.transactions) return;
-
-        const updatedData = JSON.parse(JSON.stringify(data));
-        let changed = false;
-
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions.forEach(minister => {
-            minister.departments.forEach(dept => {
-                if (dept.previous_ministry && dept.previous_ministry.trim() && !dept.show_previous_ministry) {
-                    dept.show_previous_ministry = true;
-                    changed = true;
-                }
-            });
-        });
-
-        if (changed) {
-            setData(updatedData);
-        }
-    }, [data, selectedPresidentIndex, selectedGazetteIndex, gazette, setData]);
-
-    const moveList = gazette.moves || [];
-
     const makeKey = (ministerName, departmentName) => `${departmentName}::${ministerName}`;
 
     const isMoved = (ministerName, departmentName) => {
         const key = makeKey(ministerName, departmentName);
-        return moveList.some(item => makeKey(item.mName, item.dName) === key);
+        return moves.some(item => makeKey(item.mName, item.dName) === key);
     };
 
     const handleRefresh = async () => {
         try {
-            const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
-            const info = infoResponse.data;
-            const gazetteType = info.gazette_type;
-            const gazetteFormat = info.gazette_format;
-
-            const endpoint = `http://localhost:8000/${gazetteType}/${gazetteFormat}/${gazette.date}/${gazette.number}`;
+            const endpoint = `http://localhost:8000/mindep/${selectedGazetteFormat}/${gazette.date}/${gazette.number}`;
             const response = await axios.get(endpoint);
 
+            // Make a deep copy of the data
             const updatedData = JSON.parse(JSON.stringify(data));
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = gazetteFormat;
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
+            const currentGazette = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
+
+            // Update common fields
+            currentGazette.gazette_format = selectedGazetteFormat;
+
+            if (selectedGazetteFormat === 'initial') {
+                currentGazette.transactions = response.data;
+                currentGazette.moves = [];
+            } else if (selectedGazetteFormat === 'amendment') {
+                const transactions = response.data.transactions || {};
+                currentGazette.moves = transactions.moves || [];
+                currentGazette.adds = transactions.adds || [];
+                currentGazette.terminates = transactions.terminates || [];
+            }
 
             setData(updatedData);
         } catch (error) {
@@ -88,6 +71,7 @@ const TransactionPreview = ({
             alert('❌ Failed to refetch gazette. Check the console for details.');
         }
     };
+
 
     const handleMinisterNameChange = (index, newName) => {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -280,6 +264,9 @@ const TransactionPreview = ({
         const updatedGazette = {
             transactions: transactions || [],
             moves: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [],
+            adds: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds || [],
+            terminates: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates || [],
+
         };
 
         axios.post(
@@ -305,15 +292,13 @@ const TransactionPreview = ({
             if (typeof dataFromDb === "string") {
                 dataFromDb = JSON.parse(dataFromDb);
             }
-            const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
-            const info = infoResponse.data;
-            console.log(info)
-            const gazetteFormat = info.gazette_format;
 
             const updatedData = JSON.parse(JSON.stringify(data));
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = dataFromDb.transactions || [];
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = dataFromDb.moves || [];
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = gazetteFormat
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds = dataFromDb.adds || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates = dataFromDb.terminates || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = selectedGazetteFormat
 
 
             setData(updatedData);
@@ -327,7 +312,7 @@ const TransactionPreview = ({
     const handleApproveCommit = async () => {
         setCommitting(true);
 
-        const movedDepartmentsSet = new Set(moveList.map(({ dName, mName }) => `${dName}::${mName}`));
+        const movedDepartmentsSet = new Set(moves.map(({ dName, mName }) => `${dName}::${mName}`));
 
         const payloadMinisters = transactions
             .filter(minister => minister.name && minister.name.trim() !== '')
@@ -392,7 +377,7 @@ const TransactionPreview = ({
                 color="primary"
                 sx={{ mb: 3 }}
             >
-                🔄 Refetch from last saved
+                🔄 Fetch from last saved
             </Button>
             <Button
                 onClick={handleSave}
@@ -419,7 +404,7 @@ const TransactionPreview = ({
                     handlePreviousMinistryChange={handlePreviousMinistryChange}
                     handleToggleMove={handleToggleMove}
                     isMoved={isMoved}
-                    moveList={moveList}
+                    moveList={moves}
                     handleRemoveMove={handleRemoveMove}
                     handleApproveCommit={handleApproveCommit}
                     committing={committing}
@@ -427,11 +412,86 @@ const TransactionPreview = ({
 
             )}
 
-            {selectedGazetteFormat == 'amendment' && (
-                <Box>
+            {selectedGazetteFormat === 'amendment' &&
+                (adds.length > 0 || terminates.length > 0 || moves.length > 0) && (
+                    <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3, mt: 3 }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-                </Box>
-            )}
+                            {/* Adds */}
+                            {adds.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom>Adds</Typography>
+                                    {adds.map((item, idx) => (
+                                        <Box
+                                            key={`add-${idx}`}
+                                            sx={{
+                                                bgcolor: "#e3f2fd",
+                                                borderRadius: 2,
+                                                p: 2,
+                                                mb: 1,
+                                                boxShadow: 1,
+                                                borderLeft: "6px solid #1976d2",
+                                            }}
+                                        >
+                                            <Typography>
+                                                {item.department} → {item.to_ministry} (Position: {item.position})
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+
+                            {/* Terminates */}
+                            {terminates.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom>Terminates</Typography>
+                                    {terminates.map((item, idx) => (
+                                        <Box
+                                            key={`terminate-${idx}`}
+                                            sx={{
+                                                bgcolor: "#ffebee",
+                                                borderRadius: 2,
+                                                p: 2,
+                                                mb: 1,
+                                                boxShadow: 1,
+                                                borderLeft: "6px solid #d32f2f",
+                                            }}
+                                        >
+                                            <Typography>
+                                                {item.department} ← {item.from_ministry}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+
+                            {/* Moves */}
+                            {moves.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom>Moves</Typography>
+                                    {moves.map((item, idx) => (
+                                        <Box
+                                            key={`move-${idx}`}
+                                            sx={{
+                                                bgcolor: "#fff3e0",
+                                                borderRadius: 2,
+                                                p: 2,
+                                                mb: 1,
+                                                boxShadow: 1,
+                                                borderLeft: "6px solid #fb8c00",
+                                            }}
+                                        >
+                                            <Typography>
+                                                {item.department}: {item.from_ministry} → {item.to_ministry} (Position: {item.position})
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+
+                        </Box>
+                    </Paper>
+                )}
         </Box>
     );
 
