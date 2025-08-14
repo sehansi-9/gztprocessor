@@ -62,7 +62,6 @@ const AddGazette = ({ onAdd }) => {
                 });
 
             }
-            console.log(response.data.transactions); // Send data back to parent
             handleClose();
         } catch (error) {
             console.error('Error adding gazette:', error);

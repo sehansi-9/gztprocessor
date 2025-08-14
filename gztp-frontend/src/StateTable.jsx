@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
-import InitialTransactionPreview from './InitialTransactionPreview';
+import TransactionPreview from './TransactionPreview';
 import ErrorIcon from '@mui/icons-material/Error';
 
 const Search = styled('div')(({ theme }) => ({
@@ -143,12 +143,12 @@ export default function StateTable() {
         const fetchGazettes = async () => {
             try {
                 // Fetch committed gazettes
-                const resCommitted = await axios.get('http://localhost:8000/mindep/state/gazettes/2022-07-22/2022-08-22');
+                const resCommitted = await axios.get('http://localhost:8000/mindep/state/gazettes/2022-07-22/2022-09-22');
                 const committedGazettes = resCommitted.data || [];
                 console.log('Committed:', committedGazettes);
 
                 // Fetch draft gazettes
-                const resDraft = await axios.get('http://localhost:8000/info/mindep/2022-07-22/2022-08-22');
+                const resDraft = await axios.get('http://localhost:8000/info/mindep/2022-07-22/2022-09-22');
                 const draftGazettes = resDraft.data || [];
                 console.log('Drafts:', draftGazettes);
 
@@ -185,6 +185,7 @@ export default function StateTable() {
                     const draftMatch = enrichedDrafts.find(dGazette => dGazette.number === cGazette.number);
                     if (draftMatch) {
                         cGazette.warning = draftMatch.warning;
+                        cGazette.gazette_format = draftMatch.gazette_format
                     }
                 });
 
@@ -359,7 +360,7 @@ export default function StateTable() {
                                 const newGazette = {
                                     number: gazetteNumber,
                                     date: gazetteDate,
-                                    type: gazetteType,
+                                    gazette_format: gazetteType,
                                     ministers: null,
                                     // If initial, use transactions; if amendment, use the trio
                                     transactions: gazetteType === 'initial' ? transactions : undefined,
@@ -557,7 +558,7 @@ export default function StateTable() {
                         )}
 
                     </Collapse>
-                    <InitialTransactionPreview
+                    <TransactionPreview
                         transactions={
                             Array.isArray(selectedGazette?.transactions)
                                 ? selectedGazette.transactions
@@ -615,7 +616,6 @@ export default function StateTable() {
                             cursor: 'pointer',
                             borderRadius: '12px',
                             height: '40px',
-
                             display: 'inline-block',
 
                         }}
@@ -623,21 +623,31 @@ export default function StateTable() {
                         No gazettes available for <strong>{selectedPresident.name}</strong>.
                     </Typography>
                     <AddGazette
-                        onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions }) => {
+                        onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions, adds, moves, terminates }) => {
                             const newGazette = {
                                 number: gazetteNumber,
                                 date: gazetteDate,
-                                type: gazetteType,
+                                gazette_format: gazetteType,
                                 ministers: null,
-                                transactions, // this will be used in preview
+                                // If initial, use transactions; if amendment, use the trio
+                                transactions: gazetteType === 'initial' ? transactions : undefined,
+                                adds: gazetteType === 'amendment' ? adds || [] : [],
+                                moves: gazetteType === 'amendment' ? moves || [] : [],
+                                terminates: gazetteType === 'amendment' ? terminates || [] : [],
                             };
+
                             const updatedData = JSON.parse(JSON.stringify(data));
                             updatedData.presidents[selectedPresidentIndex].gazettes.push(newGazette);
                             const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
                             setData(updatedData);
-                            setSelectedGazetteIndex(newGazetteIndex);
-                            setRefreshFlag(prev => !prev); // auto-switch to new gazette
+
+                            setGazetteWarnings((prevWarnings) => {
+                                const hasWarnings = prevWarnings.some((w) => w === true);
+                                return [...prevWarnings, hasWarnings]; // append true if any warning exists, else false
+                            });
+
+                            setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
                         }}
                     />
                 </Box>
