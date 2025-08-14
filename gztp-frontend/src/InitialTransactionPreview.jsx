@@ -7,7 +7,11 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import axios from 'axios';
 
 const InitialTransactionPreview = ({
-    selectedGazette,
+    transactions,
+    moves,
+    adds,
+    terminates,
+    selectedGazetteFormat,
     data,
     selectedPresidentIndex,
     selectedGazetteIndex,
@@ -19,7 +23,7 @@ const InitialTransactionPreview = ({
 
     // Track which ministers are expanded (show departments)
     const [expandedMinisters, setExpandedMinisters] = useState(() => {
-        return selectedGazette.reduce((acc, _, i) => {
+        return transactions.reduce((acc, _, i) => {
             acc[i] = false; // default all expanded, change if you want all collapsed initially
             return acc;
         }, {});
@@ -33,7 +37,7 @@ const InitialTransactionPreview = ({
     };
 
     const gazette = data?.presidents?.[selectedPresidentIndex]?.gazettes?.[selectedGazetteIndex];
-    if (!gazette || !Array.isArray(selectedGazette)) return null;
+    if (!gazette || !Array.isArray(transactions)) return null;
 
     // Automatically show previous ministry inputs for departments
     // that have a previous_ministry from backend but show_previous_ministry is falsey
@@ -70,15 +74,15 @@ const InitialTransactionPreview = ({
         try {
             const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
             const info = infoResponse.data;
-
             const gazetteType = info.gazette_type;
             const gazetteFormat = info.gazette_format;
-
+   
             const endpoint = `http://localhost:8000/${gazetteType}/${gazetteFormat}/${gazette.date}/${gazette.number}`;
             const response = await axios.get(endpoint);
 
             const updatedData = JSON.parse(JSON.stringify(data));
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = response.data;
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = gazetteFormat;
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = [];
 
             setData(updatedData);
@@ -208,7 +212,7 @@ const InitialTransactionPreview = ({
 
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = updatedMoves;
         setData(updatedData);
-        console.log(selectedGazette)
+        console.log(transactions)
     };
 
     const handleAddDepartment = (ministerIndex, deptIndex) => {
@@ -277,7 +281,7 @@ const InitialTransactionPreview = ({
     function handleSave() {
         const updatedData = JSON.parse(JSON.stringify(data));
         const updatedGazette = {
-            transactions: selectedGazette || [],
+            transactions: transactions || [],
             moves: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [],
         };
 
@@ -304,10 +308,16 @@ const InitialTransactionPreview = ({
             if (typeof dataFromDb === "string") {
                 dataFromDb = JSON.parse(dataFromDb);
             }
+            const infoResponse = await axios.get(`http://localhost:8000/info/${gazette.number}`);
+            const info = infoResponse.data;
+            console.log(info)
+            const gazetteFormat = info.gazette_format;
 
             const updatedData = JSON.parse(JSON.stringify(data));
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions = dataFromDb.transactions || [];
             updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = dataFromDb.moves || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = gazetteFormat
+
 
             setData(updatedData);
         } catch (error) {
@@ -322,7 +332,7 @@ const InitialTransactionPreview = ({
 
         const movedDepartmentsSet = new Set(moveList.map(({ dName, mName }) => `${dName}::${mName}`));
 
-        const payloadMinisters = selectedGazette
+        const payloadMinisters = transactions
             .filter(minister => minister.name && minister.name.trim() !== '')
             .map(minister => ({
                 name: minister.name,
@@ -395,11 +405,12 @@ const InitialTransactionPreview = ({
             >
                 Save
             </Button>
-            {selectedGazette.length > 0 && (
+
+            {transactions.length > 0 && selectedGazetteFormat == 'initial' && (
                 <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
                     <Box sx={{ display: "flex", flexDirection: "row", gap: 5 }}>
                         <Box sx={{ flex: 1 }}>
-                            {selectedGazette.map((min, idx) => (
+                            {transactions.map((min, idx) => (
                                 <Box
                                     key={idx}
                                     mb={4}
@@ -459,7 +470,7 @@ const InitialTransactionPreview = ({
                                                 e.stopPropagation();
                                                 handleDeleteMinister(idx);
                                             }}
-                                            disabled={committing || selectedGazette.length <= 1}
+                                            disabled={committing || transactions.length <= 1}
                                             sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
                                             aria-label="Remove Minister"
                                         >

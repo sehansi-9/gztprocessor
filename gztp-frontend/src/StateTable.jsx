@@ -162,7 +162,8 @@ export default function StateTable() {
                     terminates: [],
                     moves: [],
                     adds: [],
-                    warning: false
+                    warning: false,
+                    gazette_format: null,
                 }));
 
                 // Map drafts and normalize warning to a real boolean
@@ -175,7 +176,8 @@ export default function StateTable() {
                     terminates: [],
                     moves: [],
                     adds: [],
-                    warning: Boolean(Number(g.warning))
+                    warning: Boolean(Number(g.warning)),
+                    gazette_format: g.gazette_format
                 }));
 
                 // Attach draft warnings to committed if both exist
@@ -197,7 +199,7 @@ export default function StateTable() {
                 const updated = JSON.parse(JSON.stringify(Data));
                 updated.presidents[selectedPresidentIndex].gazettes = allGazettes;
                 setData(updated);
-
+                console.log(updated)
                 // Sync warning array with fetched data
                 setGazetteWarnings(allGazettes.map(g => g.warning || false));
 
@@ -353,21 +355,25 @@ export default function StateTable() {
                         ))}
 
                         <AddGazette
-                            onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions }) => {
+                            onAdd={({ gazetteNumber, gazetteDate, gazetteType, transactions, adds, moves, terminates }) => {
                                 const newGazette = {
                                     number: gazetteNumber,
                                     date: gazetteDate,
                                     type: gazetteType,
                                     ministers: null,
-                                    transactions, // this will be used in preview
+                                    // If initial, use transactions; if amendment, use the trio
+                                    transactions: gazetteType === 'initial' ? transactions : undefined,
+                                    adds: gazetteType === 'amendment' ? adds || [] : [],
+                                    moves: gazetteType === 'amendment' ? moves || [] : [],
+                                    terminates: gazetteType === 'amendment' ? terminates || [] : [],
                                 };
+
                                 const updatedData = JSON.parse(JSON.stringify(data));
                                 updatedData.presidents[selectedPresidentIndex].gazettes.push(newGazette);
                                 const newGazetteIndex = updatedData.presidents[selectedPresidentIndex].gazettes.length - 1;
 
                                 setData(updatedData);
 
-                                // Add warning for the new gazette if any existing warnings are present
                                 setGazetteWarnings((prevWarnings) => {
                                     const hasWarnings = prevWarnings.some((w) => w === true);
                                     return [...prevWarnings, hasWarnings]; // append true if any warning exists, else false
@@ -376,7 +382,6 @@ export default function StateTable() {
                                 setSelectedGazetteIndex(newGazetteIndex); // auto-switch to new gazette
                             }}
                         />
-
                     </Box>
 
                     {/* Expand/Collapse Header */}
@@ -553,13 +558,36 @@ export default function StateTable() {
 
                     </Collapse>
                     <InitialTransactionPreview
-                        selectedGazette={
+                        transactions={
                             Array.isArray(selectedGazette?.transactions)
                                 ? selectedGazette.transactions
                                 : Array.isArray(selectedGazette)
                                     ? selectedGazette
                                     : []
                         }
+                        moves={
+                            Array.isArray(selectedGazette?.moves)
+                                ? selectedGazette.moves
+                                : Array.isArray(selectedGazette?.transactions?.moves)
+                                    ? selectedGazette.transactions.moves
+                                    : []
+                        }
+
+                        adds={
+                            Array.isArray(selectedGazette?.adds)
+                                ? selectedGazette.adds
+                                : Array.isArray(selectedGazette?.transactions?.adds)
+                                    ? selectedGazette.transactions.adds
+                                    : []
+                        }
+                        terminates={
+                            Array.isArray(selectedGazette?.terminates)
+                                ? selectedGazette.terminates
+                                : Array.isArray(selectedGazette?.transactions?.terminates)
+                                    ? selectedGazette.transactions.terminates
+                                    : []
+                        }
+                        selectedGazetteFormat={selectedGazette.gazette_format}
                         data={data}
                         selectedPresidentIndex={selectedPresidentIndex}
                         selectedGazetteIndex={selectedGazetteIndex}
@@ -567,6 +595,7 @@ export default function StateTable() {
                         setRefreshFlag={setRefreshFlag}
                         onGazetteCommitted={handleGazetteCommitted}
                     />
+
                 </>
             ) : (
                 <Box

@@ -36,13 +36,33 @@ const AddGazette = ({ onAdd }) => {
         try {
             setLoading(true);
             const response = await axios.get(endpoint);
-            onAdd({
-                gazetteNumber,
-                gazetteDate,
-                gazetteType,
-                transactions: response.data,
-            });
-            console.log(response.data) // Send data back to parent
+
+            if (response.data && response.data.error) {
+                alert(response.data.error); // show the error from backend
+                return;
+            }
+            if (gazetteType == 'initial') {
+                onAdd({
+                    gazetteNumber,
+                    gazetteDate,
+                    gazetteType,
+                    transactions: response.data,
+
+                });
+
+            }
+            else {
+                onAdd({
+                    gazetteNumber,
+                    gazetteDate,
+                    gazetteType,
+                    adds: response.data.transactions.adds,
+                    terminates: response.data.transactions.terminates,
+                    moves: response.data.transactions.moves
+                });
+
+            }
+            console.log(response.data.transactions); // Send data back to parent
             handleClose();
         } catch (error) {
             console.error('Error adding gazette:', error);

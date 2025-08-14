@@ -57,7 +57,7 @@ def get_gazettes_by_president(gazette_type: str, from_date: str, to_date: str):
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT gazette_number, gazette_date, warning
+            SELECT gazette_number, gazette_date, warning, gazette_format
             FROM transactions 
             WHERE gazette_type = ? 
               AND gazette_date >= ? 
@@ -67,7 +67,7 @@ def get_gazettes_by_president(gazette_type: str, from_date: str, to_date: str):
             (gazette_type, from_date, to_date)
         )
         rows = cur.fetchall()
-        return [{"gazette_number": r[0], "date": r[1], "warning":  bool(r[2])} for r in rows]
+        return [{"gazette_number": r[0], "date": r[1], "warning":  bool(r[2]), "gazette_format": r[3]} for r in rows]
 
 def set_warning(gazette_number: str, warning: bool):
     """
