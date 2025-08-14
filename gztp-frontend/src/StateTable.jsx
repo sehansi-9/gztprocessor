@@ -83,6 +83,9 @@ export default function StateTable() {
         // Initially, no warnings
         return data.presidents[selectedPresidentIndex]?.gazettes?.map(() => false) || [];
     });
+   const [adds, setAdds] = useState([]);
+    const [terminates, setTerminates] = useState([]);
+    const [moves, setMoves] = useState([]);
 
     const presidents = data.presidents || [];
     const selectedPresident = presidents[selectedPresidentIndex];

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Paper } from '@mui/material';
+import { Box, Typography, Button, Paper, TextField, IconButton } from '@mui/material';
 import axios from 'axios';
 import InitialPreview from './InitialPreview';
+import AmendmentPreview from './AmendmentPreview';
+
 
 const TransactionPreview = ({
     transactions,
@@ -358,6 +360,114 @@ const TransactionPreview = ({
         }
     };
 
+   const handleApproveCommitAmendment = async () => {
+    setCommitting(true);
+
+    // Filter out invalid/empty records
+    const filteredAdds = adds.filter(item => item.department?.trim() && item.to_ministry?.trim());
+    const filteredMoves = moves.filter(item => item.department?.trim() && item.from_ministry?.trim() && item.to_ministry?.trim());
+    const filteredTerminates = terminates.filter(item => item.department?.trim() && item.from_ministry?.trim());
+
+    // Prepare the payload
+    const payload = {
+        transactions: {
+            adds: filteredAdds.map(item => ({
+                type: "ADD",
+                department: item.department,
+                to_ministry: item.to_ministry,
+                position: Number(item.position) || 0,
+            })),
+            moves: filteredMoves.map(item => ({
+                type: "MOVE",
+                department: item.department,
+                from_ministry: item.from_ministry,
+                to_ministry: item.to_ministry,
+                position: Number(item.position) || 0,
+            })),
+            terminates: filteredTerminates.map(item => ({
+                type: "TERMINATE",
+                department: item.department,
+                from_ministry: item.from_ministry,
+            })),
+        },
+    };
+
+    try {
+        await axios.post(
+            `http://localhost:8000/mindep/amendment/${gazette.date}/${gazette.number}`,
+            payload
+        );
+
+        // Update frontend state
+        const newData = JSON.parse(JSON.stringify(data));
+            newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
+            setData(newData);
+            newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].committed = true;
+            setData(newData);
+            setRefreshFlag(prev => !prev);
+
+            alert('✅ Gazette committed successfully! The data will refresh from backend.');
+            handleSave()
+            if (onGazetteCommitted) {
+                onGazetteCommitted(selectedGazetteIndex);
+            }
+
+    } catch (error) {
+        console.error('Error committing amendment:', error);
+        alert('❌ Failed to commit amendment. Please try again.');
+    } finally {
+        setCommitting(false);
+    }
+};
+
+
+
+    const handleChange = (listName, index, field, value) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+
+        const gazette = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
+
+        if (listName === "adds") {
+            gazette.adds[index][field] = value;
+        } else if (listName === "terminates") {
+            gazette.terminates[index][field] = value;
+        } else if (listName === "moves") {
+            gazette.moves[index][field] = value;
+        }
+
+        setData(updatedData);
+    };
+
+    const handleAddSection = (listName) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const gazette = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
+
+        if (listName === "adds") {
+            gazette.adds.push({ department: "", to_ministry: "", position: "" });
+        } else if (listName === "terminates") {
+            gazette.terminates.push({ department: "", from_ministry: "" });
+        } else if (listName === "moves") {
+            gazette.moves.push({ department: "", from_ministry: "", to_ministry: "", position: "" });
+        }
+
+        setData(updatedData);
+    };
+
+    const handleDeleteSection = (listName, index) => {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const gazette = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
+
+        if (listName === "adds") {
+            gazette.adds.splice(index, 1);
+        } else if (listName === "terminates") {
+            gazette.terminates.splice(index, 1);
+        } else if (listName === "moves") {
+            gazette.moves.splice(index, 1);
+        }
+
+        setData(updatedData);
+    };
+
     return (
         <Box mt={4}>
             <Typography variant="h6" gutterBottom>
@@ -414,84 +524,18 @@ const TransactionPreview = ({
 
             {selectedGazetteFormat === 'amendment' &&
                 (adds.length > 0 || terminates.length > 0 || moves.length > 0) && (
-                    <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3, mt: 3 }}>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-
-                            {/* Adds */}
-                            {adds.length > 0 && (
-                                <Box>
-                                    <Typography variant="h6" gutterBottom>Adds</Typography>
-                                    {adds.map((item, idx) => (
-                                        <Box
-                                            key={`add-${idx}`}
-                                            sx={{
-                                                bgcolor: "#e3f2fd",
-                                                borderRadius: 2,
-                                                p: 2,
-                                                mb: 1,
-                                                boxShadow: 1,
-                                                borderLeft: "6px solid #1976d2",
-                                            }}
-                                        >
-                                            <Typography>
-                                                {item.department} → {item.to_ministry} (Position: {item.position})
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-
-                            {/* Terminates */}
-                            {terminates.length > 0 && (
-                                <Box>
-                                    <Typography variant="h6" gutterBottom>Terminates</Typography>
-                                    {terminates.map((item, idx) => (
-                                        <Box
-                                            key={`terminate-${idx}`}
-                                            sx={{
-                                                bgcolor: "#ffebee",
-                                                borderRadius: 2,
-                                                p: 2,
-                                                mb: 1,
-                                                boxShadow: 1,
-                                                borderLeft: "6px solid #d32f2f",
-                                            }}
-                                        >
-                                            <Typography>
-                                                {item.department} ← {item.from_ministry}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-
-                            {/* Moves */}
-                            {moves.length > 0 && (
-                                <Box>
-                                    <Typography variant="h6" gutterBottom>Moves</Typography>
-                                    {moves.map((item, idx) => (
-                                        <Box
-                                            key={`move-${idx}`}
-                                            sx={{
-                                                bgcolor: "#fff3e0",
-                                                borderRadius: 2,
-                                                p: 2,
-                                                mb: 1,
-                                                boxShadow: 1,
-                                                borderLeft: "6px solid #fb8c00",
-                                            }}
-                                        >
-                                            <Typography>
-                                                {item.department}: {item.from_ministry} → {item.to_ministry} (Position: {item.position})
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-
-                        </Box>
-                    </Paper>
+                    <AmendmentPreview
+                        adds={adds}
+                        terminates={terminates}
+                        moves={moves}
+                        handleChange={handleChange}
+                        handleAddSection={handleAddSection}
+                        handleDeleteSection={handleDeleteSection}
+                        handleApproveCommitAmendment={handleApproveCommitAmendment}
+                        committing={committing}
+                    />
                 )}
+
         </Box>
     );
 
