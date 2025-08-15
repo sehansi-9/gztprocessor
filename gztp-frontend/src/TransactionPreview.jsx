@@ -45,6 +45,28 @@ const TransactionPreview = ({
         return moves.some(item => makeKey(item.mName, item.dName) === key);
     };
 
+      // Automatically show previous ministry inputs for departments
+    // that have a previous_ministry from backend but show_previous_ministry is falsey
+    useEffect(() => {
+        if (!gazette || !gazette.transactions) return;
+
+        const updatedData = JSON.parse(JSON.stringify(data));
+        let changed = false;
+
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].transactions.forEach(minister => {
+            minister.departments.forEach(dept => {
+                if (dept.previous_ministry && dept.previous_ministry.trim() && !dept.show_previous_ministry) {
+                    dept.show_previous_ministry = true;
+                    changed = true;
+                }
+            });
+        });
+
+        if (changed) {
+            setData(updatedData);
+        }
+    }, [data, selectedPresidentIndex, selectedGazetteIndex, gazette, setData]);
+
     const handleRefresh = async () => {
         try {
             const endpoint = `http://localhost:8000/mindep/${selectedGazetteFormat}/${gazette.date}/${gazette.number}`;

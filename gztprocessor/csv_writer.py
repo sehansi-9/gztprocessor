@@ -143,7 +143,7 @@ def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: di
                 "old_parent": tx["from_ministry"],
                 "new_parent": tx["to_ministry"],
                 "child": tx["department"],
-                "type": "AS_DEPARTMENT",
+                "rel_type": "AS_DEPARTMENT",
                 "date": date_str
             })
 
@@ -182,7 +182,7 @@ def generate_amendment_csvs(gazette_number: str, date_str: str, transactions: di
     csv_path = output_dir / "move.csv"
     write_or_delete_csv(move_rows, csv_path, [
         "transaction_id", "old_parent", "new_parent",
-        "child", "type", "date"
+        "child", "rel_type", "date"
     ])
 
 def generate_person_csvs(gazette_number: str, date_str: str, transactions: dict):
