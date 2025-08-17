@@ -75,7 +75,7 @@ Start the backend server:
 ```bash
 uvicorn main:app --reload
 ```
-The API will be available at http://127.0.0.1:8000/docs.
+The API will be available at http://127.0.0.1:8000
 
 4. Setup and Run the Frontend
 
