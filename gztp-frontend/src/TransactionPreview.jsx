@@ -363,7 +363,6 @@ const TransactionPreview = ({
 
             const newData = JSON.parse(JSON.stringify(data));
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
-            setData(newData);
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].committed = true;
             setData(newData);
             setRefreshFlag(prev => !prev);
@@ -421,9 +420,8 @@ const TransactionPreview = ({
         );
 
         // Update frontend state
-        const newData = JSON.parse(JSON.stringify(data));
+            const newData = JSON.parse(JSON.stringify(data));
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
-            setData(newData);
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].committed = true;
             setData(newData);
             setRefreshFlag(prev => !prev);

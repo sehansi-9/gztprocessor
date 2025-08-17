@@ -29,6 +29,8 @@ def get_contents_of_initial_gazette(gazette_number: str, date: str):
         return data
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
+    except ValueError as e:
+        return  {"error": f"Initial Gazette file for {gazette_number}, {date} not found."}
 
 
 
@@ -54,10 +56,11 @@ def get_contents_of_amendment_gazette(gazette_number: str, date: str):
     try:
         data = utils.load_mindep_gazette_data_from_JSON(gazette_number, date)
         transactions = mindep_gazette_processor.process_amendment_gazette(gazette_number, date, data)
-        trans_database.create_record(gazette_number,"mindep","amendment", date)
         return transactions
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
+    except ValueError:
+        return {"error": f"Amendment Gazette file for {gazette_number}, {date} not found."}
 
 
 @mindep_router.post("/mindep/amendment/{date}/{gazette_number}")
@@ -71,3 +74,4 @@ def create_state_from_amendment_gazette(gazette_number: str, date: str, transact
         return {"message": f"State updated for amendment gazette {gazette_number} on {date}"}
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}
+    
