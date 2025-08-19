@@ -281,132 +281,140 @@ export default function Person() {
     );
 
     const renderAdd = (add, idx) => (
-        <Box
-            key={idx}
-            sx={{
-                bgcolor: "#f1f8e9",
-                borderRadius: 2,
-                p: 2,
-                mb: 2,
-                borderLeft: "6px solid #689f38",
-                boxShadow: 1,
-            }}
-        >
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <IconButton color="error" onClick={() => removeEntry("adds", idx)}>
-                    <RemoveIcon />
-                </IconButton>
-            </Box>
-            <Box mt={1} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                <TextField
-                    label="Name"
-                    value={add.new_person}
-                    onChange={(e) => handleChange("adds", idx, "new_person", e.target.value)}
-                />
-                <TextField
-                    label="Ministry"
-                    value={add.new_ministry}
-                    onChange={(e) => handleChange("adds", idx, "new_ministry", e.target.value)}
-                />
-                <TextField
-                    label="Position"
-                    value={add.new_position}
-                    onChange={(e) => handleChange("adds", idx, "new_position", e.target.value)}
-                />
-            </Box>
+  <Box
+    key={idx}
+    sx={{
+      bgcolor: "#f1f8e9",
+      borderRadius: 2,
+      p: 2,
+      mb: 2,
+      borderLeft: "6px solid #689f38",
+      boxShadow: 1,
+    }}
+  >
+    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <IconButton color="error" onClick={() => removeEntry("adds", idx)}>
+        <RemoveIcon />
+      </IconButton>
+    </Box>
 
-            {add.suggested_terminates?.length > 0 && (
-                <Box mt={2}>
-                    <Button
-                        size="small"
-                        onClick={() => toggleSuggested(idx)}
-                        sx={{ mb: 1 }}
-                    >
-                        {expandedSuggested[idx] ? "Hide Suggested Terminates" : "Show Suggested Terminates"}
-                    </Button>
+    <Box mt={1} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+      <TextField
+        label="Name"
+        value={add.new_person}
+        onChange={(e) => handleChange("adds", idx, "new_person", e.target.value)}
+        sx={{ flex: 2, minWidth: 120 }}
+      />
+      <TextField
+        label="Ministry"
+        value={add.new_ministry}
+        onChange={(e) => handleChange("adds", idx, "new_ministry", e.target.value)}
+        sx={{ flex: 3, minWidth: 200 }}
+      />
+      <TextField
+        label="Position"
+        value={add.new_position}
+        onChange={(e) => handleChange("adds", idx, "new_position", e.target.value)}
+        sx={{ flex: 2, minWidth: 80 }}
+      />
+    </Box>
 
-                    {expandedSuggested[idx] && (
-                        <Box>
-                            {add.suggested_terminates.map((sug, sugIdx) => (
-                                <Box
-                                    key={sugIdx}
-                                    sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1, flexWrap: "wrap" }}
-                                >
-                                    <TextField
-                                        label="Person"
-                                        value={sug.existing_person}
-                                        onChange={(e) =>
-                                            handleSuggestedTerminateChange(idx, sugIdx, "existing_person", e.target.value)
-                                        }
-                                    />
-                                    <TextField
-                                        label="Ministry"
-                                        value={sug.existing_ministry}
-                                        onChange={(e) =>
-                                            handleSuggestedTerminateChange(idx, sugIdx, "existing_ministry", e.target.value)
-                                        }
-                                    />
-                                    <TextField
-                                        label="Position"
-                                        value={sug.existing_position}
-                                        onChange={(e) =>
-                                            handleSuggestedTerminateChange(idx, sugIdx, "existing_position", e.target.value)
-                                        }
-                                    />
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={sug.mark || false}
-                                                onChange={() => handleSuggestedTerminateCheck(idx, sugIdx)}
-                                            />
-                                        }
-                                        label="terminate"
-                                    />
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
-                </Box>
-            )}
-        </Box>
-    );
+    {add.suggested_terminates?.length > 0 && (
+      <Box mt={2}>
+        <Button size="small" onClick={() => toggleSuggested(idx)} sx={{ mb: 1 }}>
+          {expandedSuggested[idx] ? "Hide Suggested Terminates" : "Show Suggested Terminates"}
+        </Button>
 
-    const renderTerminate = (term, idx) => (
-        <Box
-            key={idx}
-            sx={{
-                bgcolor: "#ffebee",
-                borderRadius: 2,
-                p: 2,
-                mb: 2,
-                borderLeft: "6px solid #d32f2f",
-                boxShadow: 1,
-            }}
-        >
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <IconButton color="error" onClick={() => removeEntry("terminates", idx)}>
-                    <RemoveIcon />
-                </IconButton>
-            </Box>
-            <Box mt={1} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+        {expandedSuggested[idx] && (
+          <Box>
+            {add.suggested_terminates.map((sug, sugIdx) => (
+              <Box
+                key={sugIdx}
+                sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1, flexWrap: "wrap" }}
+              >
                 <TextField
-                    label="Name"
-                    value={term.name}
-                    onChange={(e) => handleChange("terminates", idx, "name", e.target.value)}
+                  label="Person"
+                  value={sug.existing_person}
+                  onChange={(e) =>
+                    handleSuggestedTerminateChange(idx, sugIdx, "existing_person", e.target.value)
+                  }
+                  sx={{ flex: 2, minWidth: 120 }}
                 />
                 <TextField
-                    label="Ministry"
-                    value={term.ministry}
-                    onChange={(e) => handleChange("terminates", idx, "ministry", e.target.value)}
+                  label="Ministry"
+                  value={sug.existing_ministry}
+                  onChange={(e) =>
+                    handleSuggestedTerminateChange(idx, sugIdx, "existing_ministry", e.target.value)
+                  }
+                  sx={{ flex: 3, minWidth: 200 }}
                 />
                 <TextField
-                    label="Position"
-                    value={term.position}
-                    onChange={(e) => handleChange("terminates", idx, "position", e.target.value)}
+                  label="Position"
+                  value={sug.existing_position}
+                  onChange={(e) =>
+                    handleSuggestedTerminateChange(idx, sugIdx, "existing_position", e.target.value)
+                  }
+                  sx={{ flex: 2, minWidth: 80 }}
                 />
-            </Box>
-        </Box>
-    );
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sug.mark || false}
+                      onChange={() => handleSuggestedTerminateCheck(idx, sugIdx)}
+                    />
+                  }
+                  label="terminate"
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+    )}
+  </Box>
+);
+
+const renderTerminate = (term, idx) => (
+  <Box
+    key={idx}
+    sx={{
+      bgcolor: "#ffebee",
+      borderRadius: 2,
+      p: 2,
+      mb: 2,
+      borderLeft: "6px solid #d32f2f",
+      boxShadow: 1,
+    }}
+  >
+    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <IconButton color="error" onClick={() => removeEntry("terminates", idx)}>
+        <RemoveIcon />
+      </IconButton>
+    </Box>
+
+    <Box mt={1} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+      <TextField
+        label="Name"
+        value={term.name}
+        onChange={(e) => handleChange("terminates", idx, "name", e.target.value)}
+        sx={{ flex: 2, minWidth: 120 }}
+      />
+      <TextField
+        label="Ministry"
+        value={term.ministry}
+        onChange={(e) => handleChange("terminates", idx, "ministry", e.target.value)}
+        sx={{ flex: 3, minWidth: 200 }}
+      />
+      <TextField
+        label="Position"
+        value={term.position}
+        onChange={(e) => handleChange("terminates", idx, "position", e.target.value)}
+        sx={{ flex: 2, minWidth: 80 }}
+      />
+    </Box>
+  </Box>
+);
+
 
     return (
         <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
