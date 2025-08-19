@@ -13,6 +13,33 @@ const AmendmentPreview = ({
   handleApproveCommitAmendment,
   committing
 }) => {
+
+  const handleDissolveMove = (idx) => {
+    const move = moves[idx];
+
+    // Ensure all fields are present
+    if (!move.department || !move.from_ministry || !move.to_ministry || move.position === "" || move.position === null) {
+      alert("All Move fields must be filled to dissolve.");
+      return;
+    }
+
+    // Create new Add entry
+    adds.push({
+      department: move.department,
+      to_ministry: move.to_ministry,
+      position: move.position
+    });
+
+    // Create new Terminate entry
+    terminates.push({
+      department: move.department,
+      from_ministry: move.from_ministry
+    });
+
+    // Delete the original Move
+    handleDeleteSection("moves", idx);
+  };
+
   return (
     <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3, mt: 3 }}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -191,6 +218,14 @@ const AmendmentPreview = ({
                 onChange={(e) => handleChange("moves", idx, "position", e.target.value)}
                 sx={{ width: 80 }}
               />
+              <Button
+                size="small"
+                variant="outlined"
+                color="secondary"
+                onClick={() => handleDissolveMove(idx)}
+              >
+                BREAK
+              </Button>
               <IconButton
                 size="small"
                 onClick={() => handleDeleteSection("moves", idx)}

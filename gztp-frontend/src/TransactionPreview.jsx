@@ -464,6 +464,7 @@ const TransactionPreview = ({
 
         if (listName === "adds") {
             gazette.adds.push({ department: "", to_ministry: "", position: "" });
+            console.log(gazette.adds)
         } else if (listName === "terminates") {
             gazette.terminates.push({ department: "", from_ministry: "" });
         } else if (listName === "moves") {
