@@ -55,8 +55,9 @@ export const buildPersonPayload = (transactions) => {
         (item) => item.new_person?.trim() && item.new_ministry?.trim() && item.new_position?.trim()
     );
     const filteredMoves = (transactions.moves || []).filter(
-        (item) => item.name?.trim() && item.from_ministry?.trim() && item.to_ministry?.trim() && item.position?.trim()
+        (item) =>item.name?.trim() && item.from_ministry?.trim() && item.to_ministry?.trim() &&(item.from_position?.trim() && item.to_position?.trim())
     );
+
     const filteredTerminates = (transactions.terminates || []).filter(
         (item) => item.name?.trim() && item.ministry?.trim() && item.position?.trim()
     );
@@ -76,7 +77,8 @@ export const buildPersonPayload = (transactions) => {
                 name: item.name,
                 from_ministry: item.from_ministry,
                 to_ministry: item.to_ministry,
-                position: item.position,
+                to_position: item.to_position,
+                from_position: item.from_position,
                 date: item.date || today,
             })),
             terminates: filteredTerminates.map((item) => ({
