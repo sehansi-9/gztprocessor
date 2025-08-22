@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Paper, TextField, IconButton } from '@mui/material';
 import axios from 'axios';
-import InitialPreview from './InitialPreview';
-import AmendmentPreview from './AmendmentPreview';
+import InitialPreview from './OrgInitialPreview';
+import AmendmentPreview from './OrgAmendmentPreview';
 
 
 const TransactionPreview = ({

@@ -6,9 +6,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
-import TransactionPreview from './TransactionPreview';
 import ErrorIcon from '@mui/icons-material/Error';
-import Person from './Person'
+import PersonPreview from './PersonPreview'
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -72,7 +71,7 @@ function highlightMatch(text, query) {
     return text.replace(regex, '<mark style="background-color: #ffe58f;">$1</mark>');
 }
 
-export default function StateTable() {
+export default function PersonState() {
     const [data, setData] = useState(Data);
     const [selectedPresidentIndex, setSelectedPresidentIndex] = useState(0);
     const [selectedGazetteIndex, setSelectedGazetteIndex] = useState(0);
@@ -276,8 +275,8 @@ export default function StateTable() {
     const getLatestUpdatedState = () => {
         const updatedData = JSON.parse(JSON.stringify(data));
         const currentPresident = data.presidents[selectedPresidentIndex];
-        const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevMinisters;
+        const prevPersons = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
+        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
         setData(updatedData);
     }
 
@@ -599,7 +598,7 @@ export default function StateTable() {
                     >
                         🔄 Refresh
                     </Button>
-                    <Person
+                    <PersonPreview
                         adds={selectedGazette.adds || []}
                         moves={selectedGazette.moves || []}
                         terminates={selectedGazette.terminates || []}

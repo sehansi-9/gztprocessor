@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddGazette from './AddGazette';
-import TransactionPreview from './TransactionPreview';
+import TransactionPreview from './OrgTransactionPreview';
 import ErrorIcon from '@mui/icons-material/Error';
 
 const Search = styled('div')(({ theme }) => ({
@@ -243,7 +243,6 @@ export default function StateTable() {
             return newWarnings;
         });
     };
-
 
     const getLatestUpdatedState = () => {
         const updatedData = JSON.parse(JSON.stringify(data));

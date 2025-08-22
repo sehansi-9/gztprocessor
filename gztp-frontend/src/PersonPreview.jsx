@@ -170,9 +170,6 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
         }
     };
 
-   
-
-
     function handleSave() {
         const updatedData = JSON.parse(JSON.stringify(data));
         const updatedGazette = {
@@ -273,8 +270,6 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
             setCommitting(false);
         }
     };
-
-
 
     const renderMove = (move, idx) => (
         <Box
