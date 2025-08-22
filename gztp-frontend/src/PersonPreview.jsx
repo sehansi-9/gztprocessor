@@ -3,6 +3,7 @@ import {Box,Paper,Typography,Button,Divider,TextField,Checkbox,FormControlLabel,
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import axios from 'axios';
 import { buildPersonPayload } from './shared/validators';
+import { commitPerson, saveTransactions } from "./shared/api";
 
 export default function Person({ adds, moves, terminates, selectedGazetteIndex, selectedPresidentIndex, data, setData, setRefreshFlag, handleGazetteCommitted, handleSave }) {
     // initialize with props if passed, else fallback to sampleTransactions
@@ -162,15 +163,7 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
 
         };
         const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number
-        axios.post(
-            `http://localhost:8000/transactions/${number}`,
-            updatedGazette,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }
-        )
+        saveTransactions(number, updatedGazette)
             .then(() => console.log("Saved successfully"))
             .catch(err => console.error("Save failed", err));
     }
@@ -184,10 +177,7 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
             const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number
 
             // Send to backend
-            await axios.post(
-                `http://localhost:8000/person/${date}/${number}`,
-                payload
-            );
+            await commitPerson(date, number, payload)
 
             // Update frontend state
             const newData = JSON.parse(JSON.stringify(data));

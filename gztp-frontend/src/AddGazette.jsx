@@ -12,6 +12,7 @@ import {
   Radio,
   CircularProgress
 } from '@mui/material';
+import { fetchMindepByFormat, fetchPersonByDate } from './shared/api';
 
 const AddGazette = ({ onAdd, fromPersonState = false }) => {
   const [open, setOpen] = useState(false);
@@ -35,11 +36,8 @@ const AddGazette = ({ onAdd, fromPersonState = false }) => {
     try {
       setLoading(true);
 
-      let response;
       if (fromPersonState) {
-        const endpoint = `http://127.0.0.1:8000/person/${gazetteDate}/${gazetteNumber}`;
-        response = await axios.get(endpoint);
-
+        const response = await fetchPersonByDate(gazetteDate, gazetteNumber);
         if (response.data && response.data.error) {
           alert(response.data.error);
           return;
@@ -60,8 +58,8 @@ const AddGazette = ({ onAdd, fromPersonState = false }) => {
    
       } else {
         // ✅ mindep endpoint
-        const endpoint = `http://localhost:8000/mindep/${gazetteType === 'initial' ? 'initial' : 'amendment'}/${gazetteDate}/${gazetteNumber}`;
-        response = await axios.get(endpoint);
+        const format = gazetteType === 'initial' ? 'initial' : 'amendment';
+        const response = await fetchMindepByFormat(format, gazetteDate, gazetteNumber);
 
         if (response.data && response.data.error) {
           alert(response.data.error);
