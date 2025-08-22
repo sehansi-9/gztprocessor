@@ -6,6 +6,7 @@ from typing import List
 from gztprocessor.state_managers.person_state_manager import PersonStateManager
 import gztprocessor.gazette_processors.person_gazette_processor as person_gazette_processor
 import gztprocessor.database_handlers.person_database_handler as person_database
+import gztprocessor.database_handlers.transaction_database_handler as trans_database
 import gztprocessor.csv_writer as csv_writer
 from routes.state_router import create_state_routes
 import utils as utils
@@ -23,6 +24,7 @@ def get_contents_of_person_gazette(gazette_number: str, date: str):
     try:
         data = utils.load_person_gazette_data_from_JSON(gazette_number, date)
         transactions = person_gazette_processor.process_person_gazette(gazette_number, date, data)
+        trans_database.create_record(gazette_number,"person","-", date)
         return transactions
     except FileNotFoundError:
         return {"error": f"Gazette file for {gazette_number}, {date} not found."}

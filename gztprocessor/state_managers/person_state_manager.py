@@ -64,19 +64,23 @@ class PersonStateManager(AbstractStateManager):
         return snapshot
 
 
-    def get_all_gazette_numbers(self) -> list[dict]:
-      with self.get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
+    def get_all_gazette_numbers(self, from_date, to_date) -> list[dict]:
+        with self.get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
             SELECT gazette_number, date 
-            FROM ministry
+            FROM person
+            WHERE 
+              date >= ? 
+              AND date <= ?
             GROUP BY gazette_number, date
             ORDER BY date ASC
-        """
-        )
-        rows = cur.fetchall()
-        return [{"gazette_number": row[0], "date": row[1]} for row in rows]
+        """,
+                (from_date, to_date),
+            )
+            rows = cur.fetchall()
+            return [{"gazette_number": row[0], "date": row[1]} for row in rows]
 
 
     def export_state_snapshot(self, gazette_number: str, date_str: str):

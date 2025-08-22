@@ -3,6 +3,7 @@ from rapidfuzz import fuzz
 from gztprocessor.db_connections.db_person import get_connection
 from nltk.stem import PorterStemmer
 from gztprocessor.state_managers.person_state_manager import PersonStateManager
+import gztprocessor.database_handlers.transaction_database_handler as trans_database
 
 stemmer = PorterStemmer()
 person_state_manager = PersonStateManager()
@@ -136,6 +137,7 @@ def process_person_gazette(gazette_number: str, date_str: str, data: dict) -> di
                 }
             )
 
+    print(f"Created transaction record for gazette {gazette_number} on {date_str}")
     return {
         "transactions": {
             "moves": moves,
