@@ -326,6 +326,17 @@ export default function PersonState() {
         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
         setData(updatedData);
     }
+    const downloadCsv = (gazetteNumber, dateStr, gazetteType, fileType) => {
+        const url = `http://localhost:8000/download/${gazetteNumber}/${dateStr}/${gazetteType}/${fileType}`;
+
+        // Create an invisible link to download
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileType}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
 
 
@@ -637,33 +648,32 @@ export default function PersonState() {
                         )}
 
                     </Collapse>
-                    <Box sx={{
-                        mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap'
-                    }}>
-                        <Button
-                            onClick={handleRefresh}
-                            variant="outlined"
-                            color="primary"
-                            sx={{ mb: 3 }}
-                        >
-                            🔄 Refresh
-                        </Button>
-                        <Button
-                            onClick={handleFetch}
-                            variant="outlined"
-                            color="primary"
-                            sx={{ mb: 3 }}
-                        >
-                            🔄 Fetch from last saved
-                        </Button>
-                        <Button
-                            onClick={handleSave}
-                            variant="outlined"
-                            color="primary"
-                            sx={{ mb: 3 }}
-                        >
-                            Save
-                        </Button>
+                    <Box display="flex" justifyContent="space-between" mb={3} mt={2}>
+                        {/* Left group: Refresh, Fetch, Save */}
+                        <Box display="flex" gap={1}>
+                            <Button onClick={handleRefresh} variant="outlined" color="primary">
+                                🔄 Refresh
+                            </Button>
+                            <Button onClick={handleFetch} variant="outlined" color="primary">
+                                🔄 Fetch from last saved
+                            </Button>
+                            <Button onClick={handleSave} variant="outlined" color="primary">
+                                Save
+                            </Button>
+                        </Box>
+
+                        {/* Right group: Download CSVs */}
+                        <Box display="flex" gap={1}>
+                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "add")}>
+                                ADD CSV
+                            </Button>
+                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "move")}>
+                                MOVE CSV
+                            </Button>
+                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "terminate")}>
+                                TERMINATE CSV
+                            </Button>
+                        </Box>
                     </Box>
 
                     {!(

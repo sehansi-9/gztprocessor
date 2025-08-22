@@ -488,36 +488,52 @@ const TransactionPreview = ({
 
         setData(updatedData);
     };
+    
+    const downloadCsv = (gazetteNumber, dateStr, gazetteType, fileType) => {
+        const url = `http://localhost:8000/download/${gazetteNumber}/${dateStr}/${gazetteType}/${fileType}`;
+
+        // Create an invisible link to download
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileType}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     return (
         <Box mt={4}>
             <Typography variant="h6" gutterBottom>
                 Preview Transactions
             </Typography>
-            <Button
-                onClick={handleRefresh}
-                variant="outlined"
-                color="primary"
-                sx={{ mb: 3 }}
-            >
-                🔄 Refresh
-            </Button>
-            <Button
-                onClick={handleFetch}
-                variant="outlined"
-                color="primary"
-                sx={{ mb: 3 }}
-            >
-                🔄 Fetch from last saved
-            </Button>
-            <Button
-                onClick={handleSave}
-                variant="outlined"
-                color="primary"
-                sx={{ mb: 3 }}
-            >
-                Save
-            </Button>
+            <Box display="flex" justifyContent="space-between" mb={3}>
+                {/* Left group: Refresh, Fetch, Save */}
+                <Box display="flex" gap={1}>
+                    <Button onClick={handleRefresh} variant="outlined" color="primary">
+                        🔄 Refresh
+                    </Button>
+                    <Button onClick={handleFetch} variant="outlined" color="primary">
+                        🔄 Fetch from last saved
+                    </Button>
+                    <Button onClick={handleSave} variant="outlined" color="primary">
+                        Save
+                    </Button>
+                </Box>
+
+                {/* Right group: Download CSVs */}
+                <Box display="flex" gap={1}>
+                    <Button onClick={() => downloadCsv(gazette.number, gazette.date, "mindep", "add")}>
+                        ADD CSV
+                    </Button>
+                    <Button onClick={() => downloadCsv(gazette.number, gazette.date, "mindep", "move")}>
+                        MOVE CSV
+                    </Button>
+                    <Button onClick={() => downloadCsv(gazette.number, gazette.date, "mindep", "terminate")}>
+                        TERMINATE CSV
+                    </Button>
+                </Box>
+            </Box>
 
             {transactions.length > 0 && selectedGazetteFormat == 'initial' && (
                 <InitialPreview

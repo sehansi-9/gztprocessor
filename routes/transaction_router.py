@@ -1,7 +1,9 @@
 import json
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Dict
 from fastapi import APIRouter
 from fastapi.params import Body
+from fastapi.responses import FileResponse
 
 import utils as utils
 from gztprocessor.database_handlers.transaction_database_handler import get_gazette_info, get_gazettes_by_president, set_warning
@@ -44,3 +46,19 @@ def set_warning_route(gazette_number: str, payload: dict = Body(...)):
     
     set_warning(gazette_number, bool(warning))
     return {"status": "success", "gazette_number": gazette_number, "warning": bool(warning)}
+
+@transaction_router.get("/download/{gazette_number}/{date_str}/{gazette_type}/{file_type}")
+def download_csv(gazette_number: str, date_str: str, gazette_type:str, file_type: str):
+    """
+    file_type: 'add', 'terminate', 'move'
+    """
+    file_path = Path("output") / gazette_type / date_str / gazette_number / f"{file_type}.csv"
+    
+    if file_path.exists():
+        return FileResponse(
+            path=file_path,
+            filename=f"{file_type}.csv",
+            media_type="text/csv"
+        )
+    else:
+        return {"error": "File not found"}
