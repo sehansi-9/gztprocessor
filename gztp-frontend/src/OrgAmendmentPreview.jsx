@@ -1,4 +1,3 @@
-import React from "react";
 import { Paper, Box, Typography, TextField, IconButton, Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -10,7 +9,7 @@ const AmendmentPreview = ({
   handleChange,
   handleAddSection,
   handleDeleteSection,
-  handleApproveCommitAmendment,
+  handleApproveCommit,
   committing
 }) => {
 
@@ -243,7 +242,7 @@ const AmendmentPreview = ({
         variant="contained"
         color="success"
         sx={{ mt: 3 }}
-        onClick={handleApproveCommitAmendment}
+        onClick={handleApproveCommit}
         disabled={committing}
       >
         {committing ? "Committing..." : "Approve & Commit Gazette"}

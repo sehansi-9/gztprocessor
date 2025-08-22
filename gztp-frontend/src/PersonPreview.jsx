@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from "react";
-import {
-    Box,
-    Paper,
-    Typography,
-    Button,
-    Divider,
-    TextField,
-    Checkbox,
-    FormControlLabel,
-    IconButton,
-} from "@mui/material";
+import { useState, useEffect } from "react";
+import {Box,Paper,Typography,Button,Divider,TextField,Checkbox,FormControlLabel,IconButton,} from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import axios from 'axios';
+import { buildPersonPayload } from './shared/validators';
 
 export default function Person({ adds, moves, terminates, selectedGazetteIndex, selectedPresidentIndex, data, setData, setRefreshFlag, handleGazetteCommitted, handleSave }) {
     // initialize with props if passed, else fallback to sampleTransactions
@@ -23,152 +14,143 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
     const [committing, setCommitting] = useState(false);
     const [expandedSuggested, setExpandedSuggested] = useState({});
 
-    const handleChange = (section, idx, field, value) => {
+    // Centralized dispatcher to keep all mutations in one place
+    const updatePerson = (action, payload) => {
         const updated = { ...transactions };
-        updated[section][idx][field] = value;
-        setTransactions(updated);
-    };
 
-    useEffect(() => {
-        setTransactions({ adds, moves, terminates });
-    }, [adds, moves, terminates]);
-    const handleSuggestedTerminateChange = (addIdx, sugIdx, field, value) => {
-        const updated = { ...transactions };
-        updated.adds[addIdx].suggested_terminates[sugIdx][field] = value;
-        setTransactions(updated);
-    };
-
-
-    const handleSuggestedTerminateCheck = (addIdx, sugIdx) => {
-        const updated = { ...transactions };
-        const sug = updated.adds[addIdx].suggested_terminates[sugIdx];
-        sug.mark = !sug.mark;
-
-        if (sug.mark) {
-            // Add to terminates if not already present
-            const exists = updated.terminates.some(
-                (t) =>
-                    t.name === sug.existing_person &&
-                    t.ministry === sug.existing_ministry &&
-                    t.position === sug.existing_position
-            );
-            if (!exists) {
-                updated.terminates.push({
-                    type: "TERMINATE",
-                    name: sug.existing_person,
-                    ministry: sug.existing_ministry,
-                    position: sug.existing_position,
-                });
+        switch (action) {
+            case 'change_field': {
+                const { section, idx, field, value } = payload;
+                updated[section][idx][field] = value;
+                break;
             }
-        } else {
-            // Remove from terminates
-            updated.terminates = updated.terminates.filter(
-                (t) =>
-                    !(
-                        t.name === sug.existing_person &&
-                        t.ministry === sug.existing_ministry &&
-                        t.position === sug.existing_position
-                    )
-            );
+            case 'add_entry': {
+                const { section } = payload;
+                if (section === 'adds') {
+                    updated.adds = [...updated.adds, {
+                        type: 'ADD',
+                        new_person: '',
+                        new_ministry: '',
+                        new_position: '',
+                        suggested_terminates: [],
+                    }];
+                } else if (section === 'moves') {
+                    updated.moves = [...updated.moves, {
+                        type: 'MOVE',
+                        name: '',
+                        from_ministry: '',
+                        from_position: '',
+                        to_ministry: '',
+                        to_position: '',
+                    }];
+                } else if (section === 'terminates') {
+                    updated.terminates = [...updated.terminates, {
+                        type: 'TERMINATE',
+                        name: '',
+                        ministry: '',
+                        position: '',
+                    }];
+                }
+                break;
+            }
+            case 'remove_entry': {
+                const { section, idx } = payload;
+                if (section === 'terminates') {
+                    const t = updated.terminates[idx];
+                    updated.adds.forEach((add) => {
+                        add.suggested_terminates.forEach((sug) => {
+                            if (
+                                sug.existing_person === t.name &&
+                                sug.existing_ministry === t.ministry &&
+                                sug.existing_position === t.position
+                            ) {
+                                sug.mark = false;
+                            }
+                        });
+                    });
+                }
+                updated[section].splice(idx, 1);
+                break;
+            }
+            case 'suggested_change': {
+                const { addIdx, sugIdx, field, value } = payload;
+                updated.adds[addIdx].suggested_terminates[sugIdx][field] = value;
+                break;
+            }
+            case 'suggested_check_toggle': {
+                const { addIdx, sugIdx } = payload;
+                const sug = updated.adds[addIdx].suggested_terminates[sugIdx];
+                sug.mark = !sug.mark;
+                if (sug.mark) {
+                    const exists = updated.terminates.some(
+                        (t) => t.name === sug.existing_person && t.ministry === sug.existing_ministry && t.position === sug.existing_position
+                    );
+                    if (!exists) {
+                        updated.terminates.push({
+                            type: 'TERMINATE',
+                            name: sug.existing_person,
+                            ministry: sug.existing_ministry,
+                            position: sug.existing_position,
+                        });
+                    }
+                } else {
+                    updated.terminates = updated.terminates.filter(
+                        (t) => !(t.name === sug.existing_person && t.ministry === sug.existing_ministry && t.position === sug.existing_position)
+                    );
+                }
+                break;
+            }
+            case 'dissolve_move': {
+                const { idx } = payload;
+                const move = updated.moves[idx];
+                if (move.name && move.from_ministry && move.from_position && move.to_ministry && move.to_position) {
+                    updated.adds.push({
+                        type: 'ADD',
+                        new_person: move.name,
+                        new_ministry: move.to_ministry,
+                        new_position: move.to_position,
+                        suggested_terminates: [],
+                        date: move.date || '',
+                    });
+                    updated.terminates.push({
+                        type: 'TERMINATE',
+                        name: move.name,
+                        ministry: move.from_ministry,
+                        position: move.from_position,
+                        date: move.date || '',
+                    });
+                    updated.moves.splice(idx, 1);
+                } else {
+                    alert('All Move fields must be filled to dissolve.');
+                }
+                break;
+            }
+            default:
+                break;
         }
 
         setTransactions(updated);
     };
+
+    const handleChange = (section, idx, field, value) => updatePerson('change_field', { section, idx, field, value });
+
+    useEffect(() => {
+        setTransactions({ adds, moves, terminates });
+    }, [adds, moves, terminates]);
+    const handleSuggestedTerminateChange = (addIdx, sugIdx, field, value) => updatePerson('suggested_change', { addIdx, sugIdx, field, value });
+
+
+    const handleSuggestedTerminateCheck = (addIdx, sugIdx) => updatePerson('suggested_check_toggle', { addIdx, sugIdx });
 
     const toggleSuggested = (addIdx) => {
         setExpandedSuggested((prev) => ({ ...prev, [addIdx]: !prev[addIdx] }));
     };
 
-    const addEntry = (section) => {
-        const updated = { ...transactions };
-        if (section === "adds") {
-            updated.adds.push({
-                type: "ADD",
-                new_person: "",
-                new_ministry: "",
-                new_position: "",
-                suggested_terminates: [],
-            });
-        } else if (section === "moves") {
-            updated.moves.push({
-                type: "MOVE",
-                name: "",
-                from_ministry: "",
-                from_position: "",
-                to_ministry: "",
-                to_position: "",
-            });
-        } else if (section === "terminates") {
-            updated.terminates.push({
-                type: "TERMINATE",
-                name: "",
-                ministry: "",
-                position: "",
-            });
-        }
-        setTransactions(updated);
-    };
+    const addEntry = (section) => updatePerson('add_entry', { section });
 
-    const removeEntry = (section, idx) => {
-        const updated = { ...transactions };
-        if (section === "terminates") {
-            const t = updated.terminates[idx];
+    const removeEntry = (section, idx) => updatePerson('remove_entry', { section, idx });
 
-            // uncheck any matching suggested terminate
-            updated.adds.forEach((add) => {
-                add.suggested_terminates.forEach((sug) => {
-                    if (
-                        sug.existing_person === t.name &&
-                        sug.existing_ministry === t.ministry &&
-                        sug.existing_position === t.position
-                    ) {
-                        sug.mark = false;
-                    }
-                });
-            });
-        }
-        updated[section].splice(idx, 1);
-        setTransactions(updated);
-    };
-
-    const dissolveMove = (idx) => {
-        const updated = { ...transactions };
-        const move = updated.moves[idx];
-
-        // Only proceed if all 5 fields are present
-        if (
-            move.name &&
-            move.from_ministry &&
-            move.from_position &&
-            move.to_ministry &&
-            move.to_position
-        ) {
-            // Add new ADD entry
-            updated.adds.push({
-                type: "ADD",
-                new_person: move.name,
-                new_ministry: move.to_ministry,
-                new_position: move.to_position,
-                suggested_terminates: [],
-                date: move.date || "",
-            });
-
-            // Add new TERMINATE entry
-            updated.terminates.push({
-                type: "TERMINATE",
-                name: move.name,
-                ministry: move.from_ministry,
-                position: move.from_position,
-                date: move.date || "",
-            });
-
-            // Remove the move
-            updated.moves.splice(idx, 1);
-            setTransactions(updated);
-        } else {
-            alert("All Move fields must be filled to dissolve.");
-        }
-    };
+    const dissolveMove = (idx) => updatePerson('dissolve_move', { idx });
 
     function handleSave() {
         const updatedData = JSON.parse(JSON.stringify(data));
@@ -197,52 +179,7 @@ export default function Person({ adds, moves, terminates, selectedGazetteIndex, 
         setCommitting(true);
 
         try {
-            // Filter out invalid/empty records
-            const filteredAdds = transactions.adds.filter(
-                (item) =>
-                    item.new_person?.trim() &&
-                    item.new_ministry?.trim() &&
-                    item.new_position?.trim()
-            );
-            const filteredMoves = transactions.moves.filter(
-                (item) =>
-                    item.name?.trim() &&
-                    item.from_ministry?.trim() &&
-                    item.to_ministry?.trim() &&
-                    item.position?.trim()
-            );
-            const filteredTerminates = transactions.terminates.filter(
-                (item) =>
-                    item.name?.trim() && item.ministry?.trim() && item.position?.trim()
-            );
-
-            // Prepare payload exactly like your example
-            const payload = {
-                transactions: {
-                    adds: filteredAdds.map((item) => ({
-                        type: "ADD",
-                        new_person: item.new_person,
-                        new_ministry: item.new_ministry,
-                        new_position: item.new_position,
-                        date: item.date || new Date().toISOString().split("T")[0], // default today
-                    })),
-                    moves: filteredMoves.map((item) => ({
-                        type: "MOVE",
-                        name: item.name,
-                        from_ministry: item.from_ministry,
-                        to_ministry: item.to_ministry,
-                        position: item.position,
-                        date: item.date || new Date().toISOString().split("T")[0],
-                    })),
-                    terminates: filteredTerminates.map((item) => ({
-                        type: "TERMINATE",
-                        name: item.name,
-                        ministry: item.ministry,
-                        position: item.position,
-                        date: item.date || new Date().toISOString().split("T")[0],
-                    })),
-                },
-            };
+            const payload = buildPersonPayload(transactions);
             const date = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].date;
             const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number
 

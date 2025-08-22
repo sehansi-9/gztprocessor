@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Paper,
@@ -18,19 +17,9 @@ export default function InitialPreview({
   transactions,
   expandedMinisters,
   toggleMinister,
-  handleMinisterNameChange,
-  handleAddMinister,
-  handleDeleteMinister,
-  handleDeptNameChange,
-  handleAddDepartment,
-  handleDeleteDepartment,
-  handleAddPreviousMinistry,
-  handleRemovePreviousMinistry,
-  handlePreviousMinistryChange,
-  handleToggleMove,
+  onAction,
   isMoved,
   moveList,
-  handleRemoveMove,
   handleApproveCommit,
   committing,
 }) {
@@ -71,7 +60,7 @@ export default function InitialPreview({
                   label={`Minister ${idx + 1}`}
                   variant="standard"
                   value={min.name}
-                  onChange={(e) => handleMinisterNameChange(idx, e.target.value)}
+                  onChange={(e) => (onAction ? onAction('minister_name', { ministerIndex: idx, value: e.target.value }) : handleMinisterNameChange(idx, e.target.value))}
                   disabled={committing}
                   fullWidth
                   sx={{
@@ -84,7 +73,7 @@ export default function InitialPreview({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleAddMinister(idx);
+                    onAction ? onAction('add_minister', { ministerIndex: idx }) : handleAddMinister(idx);
                   }}
                   disabled={committing}
                   sx={{ border: "1px dashed #1976d2", color: "#1976d2" }}
@@ -96,7 +85,7 @@ export default function InitialPreview({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteMinister(idx);
+                    onAction ? onAction('delete_minister', { ministerIndex: idx }) : handleDeleteMinister(idx);
                   }}
                   disabled={committing || transactions.length <= 1}
                   sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
@@ -129,15 +118,13 @@ export default function InitialPreview({
                             label={`Department ${i + 1}`}
                             variant="standard"
                             value={dept.name}
-                            onChange={(e) =>
-                              handleDeptNameChange(idx, i, e.target.value)
-                            }
+                            onChange={(e) => (onAction ? onAction('dept_name', { ministerIndex: idx, deptIndex: i, value: e.target.value }) : handleDeptNameChange(idx, i, e.target.value))}
                             disabled={committing}
                             fullWidth
                           />
                           <IconButton
                             size="small"
-                            onClick={() => handleAddDepartment(idx, i)}
+                            onClick={() => (onAction ? onAction('add_department', { ministerIndex: idx, deptIndex: i }) : handleAddDepartment(idx, i))}
                             disabled={committing}
                             sx={{ border: "1px dashed #afb42b", color: "#afb42b" }}
                             aria-label="Add Department"
@@ -146,7 +133,7 @@ export default function InitialPreview({
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteDepartment(idx, i)}
+                            onClick={() => (onAction ? onAction('delete_department', { ministerIndex: idx, deptIndex: i }) : handleDeleteDepartment(idx, i))}
                             disabled={committing}
                             sx={{ border: "1px dashed #d32f2f", color: "#d32f2f" }}
                             aria-label="Remove Department"
@@ -167,13 +154,7 @@ export default function InitialPreview({
                               control={
                                 <Checkbox
                                   checked={isMoved(min.name, dept.name)}
-                                  onChange={() =>
-                                    handleToggleMove(
-                                      min.name,
-                                      dept.name,
-                                      dept.previous_ministry
-                                    )
-                                  }
+                                  onChange={() => (onAction ? onAction('toggle_move', { ministerName: min.name, departmentName: dept.name, previousMinistry: dept.previous_ministry }) : handleToggleMove(min.name, dept.name, dept.previous_ministry))}
                                   disabled={
                                     committing ||
                                     !(dept.previous_ministry &&
@@ -199,9 +180,7 @@ export default function InitialPreview({
                                   <TextField
                                     variant="standard"
                                     value={dept.previous_ministry}
-                                    onChange={(e) =>
-                                      handlePreviousMinistryChange(idx, i, e.target.value)
-                                    }
+                                    onChange={(e) => (onAction ? onAction('previous_ministry', { ministerIndex: idx, deptIndex: i, value: e.target.value }) : handlePreviousMinistryChange(idx, i, e.target.value))}
                                     disabled={committing}
                                     size="small"
                                     sx={{ width: "180px" }}
@@ -210,7 +189,7 @@ export default function InitialPreview({
                               }
                             />
                             <Button
-                              onClick={() => handleRemovePreviousMinistry(idx, i)}
+                              onClick={() => (onAction ? onAction('remove_previous_ministry_field', { ministerIndex: idx, deptIndex: i }) : handleRemovePreviousMinistry(idx, i))}
                               size="small"
                               color="error"
                               disabled={committing}
@@ -220,7 +199,7 @@ export default function InitialPreview({
                           </Box>
                         ) : (
                           <Button
-                            onClick={() => handleAddPreviousMinistry(idx, i)}
+                            onClick={() => (onAction ? onAction('add_previous_ministry_field', { ministerIndex: idx, deptIndex: i }) : handleAddPreviousMinistry(idx, i))}
                             size="small"
                             sx={{ mt: 1 }}
                             disabled={committing}
@@ -251,7 +230,7 @@ export default function InitialPreview({
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => handleAddDepartment(idx, -1)}
+                        onClick={() => (onAction ? onAction('add_department', { ministerIndex: idx, deptIndex: -1 }) : handleAddDepartment(idx, -1))}
                         disabled={committing}
                         sx={{ borderColor: "#afb42b", color: "#afb42b" }}
                         aria-label="Add Department"
@@ -320,7 +299,7 @@ export default function InitialPreview({
                 <IconButton
                   size="medium"
                   color="error"
-                  onClick={() => handleRemoveMove(mName, dName)}
+                  onClick={() => (onAction ? onAction('toggle_move', { ministerName: mName, departmentName: dName }) : handleRemoveMove(mName, dName))}
                   aria-label={`Remove move ${dName} from ${mName}`}
                   sx={{ ml: 1 }}
                   title="Remove this move"

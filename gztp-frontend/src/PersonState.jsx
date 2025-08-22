@@ -1,45 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Box, Button, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, InputBase, Avatar, Divider, CircularProgress, IconButton, Collapse, } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
-import SearchIcon from '@mui/icons-material/Search';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { Box, Button, Typography, Paper, Avatar, Divider } from '@mui/material';
 import AddGazette from './AddGazette';
 import ErrorIcon from '@mui/icons-material/Error';
 import PersonPreview from './PersonPreview'
-
-const Search = styled('div')(({ theme }) => ({
-    position: 'relative',
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha(theme.palette.grey[900], 0.05),
-    '&:hover': {
-        backgroundColor: alpha(theme.palette.grey[900], 0.1),
-    },
-    marginLeft: theme.spacing(2),
-
-}));
-
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-    padding: theme.spacing(0, 2),
-    height: '100%',
-    position: 'absolute',
-    pointerEvents: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: 'inherit',
-    width: '100%',
-    '& .MuiInputBase-input': {
-        padding: theme.spacing(1.2, 1, 1.2, 0),
-        paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-        transition: theme.transitions.create('width'),
-        width: '100%',
-    },
-}));
+import { downloadCsv } from './shared/downloads';
+import { refreshPersonGazette, fetchPersonDraft, savePersonDraft } from './shared/transactions';
+import { fetchGazettesMeta, loadScopeState, handleGazetteCommittedShared, deriveLatestUpdatedState } from './shared/state';
+import { SearchBar, CollapsibleSection, Toolbar } from './shared/ui';
 
 const Data = {
     presidents: [
@@ -108,27 +75,20 @@ export default function PersonState() {
             const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
             if (!currentGazette) return;
 
-            // Only load if persons not yet set or explicitly null to avoid infinite loops
             if (currentGazette.persons !== null && currentGazette.persons !== undefined) return;
 
             setLoading(true);
             try {
-                const res = await axios.get(
-                    `http://localhost:8000/person/state/${currentGazette.date}/${currentGazette.number}`
-                );
-                const backendPersons = res.data.state?.persons;
-
+                const backendPersons = await loadScopeState('person', currentGazette.date, currentGazette.number);
                 const updatedData = JSON.parse(JSON.stringify(data));
 
                 if (backendPersons?.length > 0) {
                     updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = backendPersons;
                 } else {
-                    // If no backend Persons for current gazette, fallback to previous gazette Persons
                     if (selectedGazetteIndex > 0) {
                         const prevPersons = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
                         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
                     } else {
-                        // No previous gazette, so empty Persons
                         updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = [];
                     }
                 }
@@ -147,123 +107,25 @@ export default function PersonState() {
     useEffect(() => {
         const fetchGazettes = async () => {
             try {
-                // Fetch committed gazettes
-                const resCommitted = await axios.get('http://localhost:8000/person/state/gazettes/2022-07-22/2022-09-22');
-                const committedGazettes = resCommitted.data || [];
-                console.log('Committed:', committedGazettes);
-
-                // Fetch draft gazettes
-                const resDraft = await axios.get('http://localhost:8000/info/person/2022-07-22/2022-09-22');
-                const draftGazettes = resDraft.data || [];
-                console.log('Drafts:', draftGazettes);
-
-                // Map committed
-                const enrichedCommitted = committedGazettes.map(g => ({
-                    number: g.gazette_number,
-                    date: g.date,
-                    committed: true,
-                    persons: null,
-                    transactions: null,
-                    terminates: [],
-                    moves: [],
-                    adds: [],
-                    warning: false,
-                    gazette_format: null,
-                }));
-
-                // Map drafts and normalize warning to a real boolean
-                const enrichedDrafts = draftGazettes.map(g => ({
-                    number: g.gazette_number,
-                    date: g.date,
-                    committed: false,
-                    persons: null,
-                    transactions: null,
-                    terminates: [],
-                    moves: [],
-                    adds: [],
-                    warning: Boolean(Number(g.warning)),
-                    gazette_format: g.gazette_format
-                }));
-
-                // Attach draft warnings to committed if both exist
-                enrichedCommitted.forEach(cGazette => {
-                    const draftMatch = enrichedDrafts.find(dGazette => dGazette.number === cGazette.number);
-                    if (draftMatch) {
-                        cGazette.warning = draftMatch.warning;
-                        cGazette.gazette_format = draftMatch.gazette_format
-                    }
-                });
-
-                // Filter out drafts that have a committed counterpart
-                const committedNumbers = new Set(enrichedCommitted.map(g => g.number));
-                const filteredDrafts = enrichedDrafts.filter(g => !committedNumbers.has(g.number));
-
-                const allGazettes = [...enrichedCommitted, ...filteredDrafts]
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                // Update main data state
+                const { gazettes, warnings } = await fetchGazettesMeta('person', '2022-07-22', '2022-09-22');
                 const updated = JSON.parse(JSON.stringify(Data));
-                updated.presidents[selectedPresidentIndex].gazettes = allGazettes;
+                updated.presidents[selectedPresidentIndex].gazettes = gazettes;
                 setData(updated);
-                console.log(updated)
-                // Sync warning array with fetched data
-                setGazetteWarnings(allGazettes.map(g => g.warning || false));
-
+                setGazetteWarnings(warnings);
             } catch (err) {
                 console.error("Failed to fetch gazettes:", err);
             }
         };
-
         fetchGazettes();
     }, []);
 
-    const handleGazetteCommitted = (selectedGazetteIndex) => {
-        setGazetteWarnings((prev) => {
-            const gazettes = data.presidents[selectedPresidentIndex]?.gazettes || [];
-            const newWarnings = prev.slice();
-
-            // Clear warning on committed gazette
-            newWarnings[selectedGazetteIndex] = false;
-
-            // Persist updated warning to drafts table
-            const committedGazette = gazettes[selectedGazetteIndex];
-            axios.post(
-                `http://localhost:8000/transactions/${committedGazette.number}/warning`,
-                { warning: false }
-            ).catch(err => console.error("Failed to update warning:", err));
-
-            // Mark all gazettes after committedIndex as needing redo
-            for (let i = selectedGazetteIndex + 1; i < gazettes.length; i++) {
-                newWarnings[i] = true;
-
-                // Persist warning to drafts table
-                axios.post(
-                    `http://localhost:8000/transactions/${gazettes[i].number}/warning`,
-                    { warning: true }
-                ).catch(err => console.error("Failed to update warning:", err));
-            }
-
-            return newWarnings;
-        });
+    const handleGazetteCommitted = (committedIndex) => {
+        setGazetteWarnings(() => handleGazetteCommittedShared(data, selectedPresidentIndex, committedIndex));
     };
     const handleRefresh = async () => {
         try {
-            const date = selectedPresident.gazettes[selectedGazetteIndex].date;
-            const number = selectedPresident.gazettes[selectedGazetteIndex].number;
-
-            const endpoint = `http://localhost:8000/person/${date}/${number}`;
-            const response = await axios.get(endpoint);
-
-            // Make a deep copy of the data
-            const updatedData = JSON.parse(JSON.stringify(data));
-            const currentGazette = updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
-
-
-            const transactions = response.data.transactions || {};
-            currentGazette.moves = transactions.moves || [];
-            currentGazette.adds = transactions.adds || [];
-            currentGazette.terminates = transactions.terminates || [];
-            setData(updatedData);
+            const gazette = selectedPresident.gazettes[selectedGazetteIndex];
+            await refreshPersonGazette({ gazette, data, selectedPresidentIndex, selectedGazetteIndex, setData });
         }
         catch (error) {
             console.error('Error refetching gazette:', error);
@@ -273,25 +135,8 @@ export default function PersonState() {
 
     async function handleFetch() {
         try {
-
-            const number = selectedPresident.gazettes[selectedGazetteIndex].number;
-            const endpoint = `http://localhost:8000/transactions/${number}`;
-            const response = await axios.get(endpoint);
-
-            let dataFromDb = response.data;
-            // In case backend returns string, parse it
-            if (typeof dataFromDb === "string") {
-                dataFromDb = JSON.parse(dataFromDb);
-            }
-
-            const updatedData = JSON.parse(JSON.stringify(data));
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = dataFromDb.moves || [];
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds = dataFromDb.adds || [];
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates = dataFromDb.terminates || [];
-            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = "-"
-
-
-            setData(updatedData);
+            const gazette = selectedPresident.gazettes[selectedGazetteIndex];
+            await fetchPersonDraft({ gazette, data, selectedPresidentIndex, selectedGazetteIndex, setData });
         } catch (error) {
             console.error('Error refetching gazette:', error);
             alert('❌ Failed to refetch gazette. Check the console for details.');
@@ -299,43 +144,17 @@ export default function PersonState() {
     }
 
     function handleSave() {
-        const updatedData = JSON.parse(JSON.stringify(data));
-        const updatedGazette = {
-            moves: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [],
-            adds: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds || [],
-            terminates: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates || [],
-
-        };
-        const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number
-        axios.post(
-            `http://localhost:8000/transactions/${number}`,
-            updatedGazette,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }
-        )
+        const gazette = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
+        savePersonDraft({ gazette, data, selectedPresidentIndex, selectedGazetteIndex })
             .then(() => console.log("Saved successfully"))
             .catch(err => console.error("Save failed", err));
     }
     const getLatestUpdatedState = () => {
-        const updatedData = JSON.parse(JSON.stringify(data));
-        const currentPresident = data.presidents[selectedPresidentIndex];
-        const prevPersons = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
-        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
-        setData(updatedData);
+        const updated = deriveLatestUpdatedState(data, selectedPresidentIndex, selectedGazetteIndex, 'persons');
+        setData(updated);
     }
-    const downloadCsv = (gazetteNumber, dateStr, gazetteType, fileType) => {
-        const url = `http://localhost:8000/download/${gazetteNumber}/${dateStr}/${gazetteType}/${fileType}`;
-
-        // Create an invisible link to download
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileType}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleDownload = (gazetteNumber, dateStr, gazetteType, fileType) => {
+        downloadCsv(gazetteNumber, dateStr, gazetteType, fileType);
     };
 
 
@@ -472,228 +291,53 @@ export default function PersonState() {
                         />
                     </Box>
 
-                    {/* Expand/Collapse Header */}
-                    <Box
-                        onClick={() => setExpanded((prev) => !prev)}
-                        sx={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            userSelect: 'none',
-                            mb: 1,
-                            justifyContent: 'space-between',
+                    <CollapsibleSection
+                        expanded={expanded}
+                        setExpanded={setExpanded}
+                        title={<Typography variant="h6">Current State</Typography>}
+                        type="persons"
+                        searchQuery={searchQuery}
+                        loading={loading}
+                        selectedGazette={selectedGazette}
+                        filteredPersons={filteredPersons}
+                        gazetteWarnings={gazetteWarnings}
+                        selectedGazetteIndex={selectedGazetteIndex}
+                        getLatestUpdatedState={getLatestUpdatedState}
+                        highlightMatch={highlightMatch}
+                        SearchBar={SearchBar}
+                    />
+                    <Box mt={4}>
+                        <Typography variant="h6" gutterBottom>
+                            Preview Transactions
+                        </Typography>
+                        <Toolbar
+                            onRefresh={handleRefresh}
+                            onFetch={handleFetch}
+                            onSave={handleSave}
+                            onDownload={handleDownload}
+                            gazette={selectedGazette}
+                            scope="person"
+                        />
 
-                        }}
-                    >
-                        <Typography variant="h6"> Current State </Typography>
-                        <IconButton
-                            size="small"
-                            aria-label={expanded ? 'Collapse section' : 'Expand section'}
-                            sx={{
-                                transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                                transition: '0.3s',
-                            }}
-                        >
-                            {expanded ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
-                        </IconButton>
+                        {!(
+                            (selectedGazette.adds?.length === 0) &&
+                            (selectedGazette.moves?.length === 0) &&
+                            (selectedGazette.terminates?.length === 0)
+                        ) && (
+                                <PersonPreview
+                                    adds={selectedGazette.adds || []}
+                                    moves={selectedGazette.moves || []}
+                                    terminates={selectedGazette.terminates || []}
+                                    selectedGazetteIndex={selectedGazetteIndex}
+                                    selectedPresidentIndex={selectedPresidentIndex}
+                                    data={data}
+                                    setData={setData}
+                                    setRefreshFlag={setRefreshFlag}
+                                    handleGazetteCommitted={handleGazetteCommitted}
+                                    handleSave={handleSave}
+                                />
+                            )}
                     </Box>
-
-                    {/* Collapsible Search + Table */}
-                    <Collapse in={expanded} timeout="auto" unmountOnExit>
-                        {/* Search */}
-                        <Search sx={{ mb: 2 }}>
-                            <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
-                            <StyledInputBase
-                                placeholder="Search persons or portfolios"
-                                inputProps={{ 'aria-label': 'search' }}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </Search>
-
-                        {/* Table */}
-                        {loading ? (
-                            <Box display="flex" justifyContent="center" mt={4}>
-                                <CircularProgress />
-                            </Box>
-                        ) : !selectedGazette?.persons ? (
-                            <Paper
-                                sx={{
-                                    p: 4,
-                                    mt: 4,
-                                    borderRadius: 3,
-                                    boxShadow: 3,
-                                    textAlign: 'center',
-                                    bgcolor: '#fff3cd', // light warning bg
-                                    color: '#856404', // dark warning text
-                                }}
-                            >
-                                <Typography variant="h6" gutterBottom>⚠️ No persons available for this gazette.</Typography>
-                                <Typography variant="body2">Please select another gazette or add persons.</Typography>
-                            </Paper>
-                        ) : (
-                            <TableContainer
-                                component={Paper}
-                                sx={{
-                                    borderRadius: 4,
-                                    mt: 2,
-                                    boxShadow: 4,
-                                    maxHeight: 300,
-                                    overflowY: 'auto',
-                                    bgcolor: 'background.paper',
-                                    border: '1px solid #ddd',
-                                }}
-                            >
-                                <Table stickyHeader aria-label="persons table">
-                                    <TableHead sx={{ backgroundColor: '#1976d2' }}>
-                                        <TableRow>
-                                            <TableCell
-                                                sx={{
-                                                    fontWeight: 'bold',
-                                                    color: 'black',
-                                                    fontSize: '1rem',
-                                                    py: 1.5,
-                                                    px: 2,
-                                                    borderBottom: 'none',
-                                                }}
-                                            >
-                                                Person
-                                            </TableCell>
-
-                                            <TableCell
-                                                sx={{
-                                                    fontWeight: 'bold',
-                                                    color: 'black',
-                                                    fontSize: '1rem',
-                                                    py: 1.5,
-                                                    px: 2,
-                                                    borderBottom: 'none',
-                                                }}
-                                            >
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        width: '100%',
-                                                    }}
-                                                >
-                                                    Portfolios
-                                                    {gazetteWarnings[selectedGazetteIndex] && (
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            onClick={() => getLatestUpdatedState()}
-                                                        >
-                                                            Get latest updated state
-                                                        </Button>
-                                                    )}
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHead>
-
-                                    <TableBody>
-                                        {filteredPersons.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={2} sx={{ textAlign: 'center', py: 3 }}>
-                                                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                                                        No matching records found.
-                                                    </Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filteredPersons.map((person, idx) => (
-                                                <TableRow
-                                                    hover
-                                                    key={idx}
-                                                    sx={{
-                                                        bgcolor: idx % 2 === 0 ? 'action.hover' : 'background.default',
-                                                    }}
-                                                >
-                                                    <TableCell
-                                                        sx={{ py: 1.5, px: 2, minWidth: 150 }}
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: ` ${highlightMatch(person.person_name, searchQuery)}`,
-                                                        }}
-                                                    />
-                                                    <TableCell sx={{ py: 1.5, px: 2 }}>
-                                                        <ul
-                                                            style={{
-                                                                margin: 0,
-                                                                paddingLeft: 0,        // removes indent
-                                                                fontSize: '0.9rem',
-                                                                color: '#444',
-                                                                listStyleType: 'none',
-                                                            }}
-                                                        >
-                                                            {person.portfolios.map((pf, dIdx) => (
-                                                                <li
-                                                                    key={dIdx}
-                                                                    dangerouslySetInnerHTML={{
-                                                                        __html: highlightMatch(`${pf.position} - ${pf.name} `, searchQuery),
-                                                                    }}
-                                                                    style={{ marginBottom: '0.25rem' }}
-                                                                />
-                                                            ))}
-                                                        </ul>
-                                                    </TableCell>
-
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        )}
-
-                    </Collapse>
-                    <Box display="flex" justifyContent="space-between" mb={3} mt={2}>
-                        {/* Left group: Refresh, Fetch, Save */}
-                        <Box display="flex" gap={1}>
-                            <Button onClick={handleRefresh} variant="outlined" color="primary">
-                                🔄 Refresh
-                            </Button>
-                            <Button onClick={handleFetch} variant="outlined" color="primary">
-                                🔄 Fetch from last saved
-                            </Button>
-                            <Button onClick={handleSave} variant="outlined" color="primary">
-                                Save
-                            </Button>
-                        </Box>
-
-                        {/* Right group: Download CSVs */}
-                        <Box display="flex" gap={1}>
-                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "add")}>
-                                ADD CSV
-                            </Button>
-                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "move")}>
-                                MOVE CSV
-                            </Button>
-                            <Button onClick={() => downloadCsv(selectedGazette.number, selectedGazette.date, "person", "terminate")}>
-                                TERMINATE CSV
-                            </Button>
-                        </Box>
-                    </Box>
-
-                    {!(
-                        (selectedGazette.adds?.length === 0) &&
-                        (selectedGazette.moves?.length === 0) &&
-                        (selectedGazette.terminates?.length === 0)
-                    ) && (
-                            <PersonPreview
-                                adds={selectedGazette.adds || []}
-                                moves={selectedGazette.moves || []}
-                                terminates={selectedGazette.terminates || []}
-                                selectedGazetteIndex={selectedGazetteIndex}
-                                selectedPresidentIndex={selectedPresidentIndex}
-                                data={data}
-                                setData={setData}
-                                setRefreshFlag={setRefreshFlag}
-                                handleGazetteCommitted={handleGazetteCommitted}
-                                handleSave={handleSave}
-                            />
-                        )}
 
                 </>
             ) : (
