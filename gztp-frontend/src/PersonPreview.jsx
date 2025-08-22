@@ -13,7 +13,7 @@ import {
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import axios from 'axios';
 
-export default function Person({ adds, moves, terminates, selectedGazetteIndex, selectedPresidentIndex, data, setData, setRefreshFlag, handleGazetteCommitted }) {
+export default function Person({ adds, moves, terminates, selectedGazetteIndex, selectedPresidentIndex, data, setData, setRefreshFlag, handleGazetteCommitted, handleSave }) {
     // initialize with props if passed, else fallback to sampleTransactions
     const [transactions, setTransactions] = useState({
         adds,

@@ -248,8 +248,9 @@ export default function PersonState() {
     };
     const handleRefresh = async () => {
         try {
-            const date = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].date;
-            const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number;
+            const date = selectedPresident.gazettes[selectedGazetteIndex].date;
+            const number = selectedPresident.gazettes[selectedGazetteIndex].number;
+
             const endpoint = `http://localhost:8000/person/${date}/${number}`;
             const response = await axios.get(endpoint);
 
@@ -264,14 +265,60 @@ export default function PersonState() {
             currentGazette.terminates = transactions.terminates || [];
             setData(updatedData);
         }
-
-
         catch (error) {
             console.error('Error refetching gazette:', error);
             alert('❌ Failed to refetch gazette. Check the console for details.');
         }
     };
 
+    async function handleFetch() {
+        try {
+
+            const number = selectedPresident.gazettes[selectedGazetteIndex].number;
+            const endpoint = `http://localhost:8000/transactions/${number}`;
+            const response = await axios.get(endpoint);
+
+            let dataFromDb = response.data;
+            // In case backend returns string, parse it
+            if (typeof dataFromDb === "string") {
+                dataFromDb = JSON.parse(dataFromDb);
+            }
+
+            const updatedData = JSON.parse(JSON.stringify(data));
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves = dataFromDb.moves || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds = dataFromDb.adds || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates = dataFromDb.terminates || [];
+            updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].gazette_format = "-"
+
+
+            setData(updatedData);
+        } catch (error) {
+            console.error('Error refetching gazette:', error);
+            alert('❌ Failed to refetch gazette. Check the console for details.');
+        }
+    }
+
+    function handleSave() {
+        const updatedData = JSON.parse(JSON.stringify(data));
+        const updatedGazette = {
+            moves: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].moves || [],
+            adds: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].adds || [],
+            terminates: updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].terminates || [],
+
+        };
+        const number = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].number
+        axios.post(
+            `http://localhost:8000/transactions/${number}`,
+            updatedGazette,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        )
+            .then(() => console.log("Saved successfully"))
+            .catch(err => console.error("Save failed", err));
+    }
     const getLatestUpdatedState = () => {
         const updatedData = JSON.parse(JSON.stringify(data));
         const currentPresident = data.presidents[selectedPresidentIndex];
@@ -590,25 +637,53 @@ export default function PersonState() {
                         )}
 
                     </Collapse>
-                    <Button
-                        onClick={handleRefresh}
-                        variant="outlined"
-                        color="primary"
-                        sx={{ mb: 3 }}
-                    >
-                        🔄 Refresh
-                    </Button>
-                    <PersonPreview
-                        adds={selectedGazette.adds || []}
-                        moves={selectedGazette.moves || []}
-                        terminates={selectedGazette.terminates || []}
-                        selectedGazetteIndex={selectedGazetteIndex}
-                        selectedPresidentIndex={selectedPresidentIndex}
-                        data={data}
-                        setData={setData}
-                        setRefreshFlag={setRefreshFlag}
-                        handleGazetteCommitted={handleGazetteCommitted}
-                    />
+                    <Box sx={{
+                        mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap'
+                    }}>
+                        <Button
+                            onClick={handleRefresh}
+                            variant="outlined"
+                            color="primary"
+                            sx={{ mb: 3 }}
+                        >
+                            🔄 Refresh
+                        </Button>
+                        <Button
+                            onClick={handleFetch}
+                            variant="outlined"
+                            color="primary"
+                            sx={{ mb: 3 }}
+                        >
+                            🔄 Fetch from last saved
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            variant="outlined"
+                            color="primary"
+                            sx={{ mb: 3 }}
+                        >
+                            Save
+                        </Button>
+                    </Box>
+
+                    {!(
+                        (selectedGazette.adds?.length === 0) &&
+                        (selectedGazette.moves?.length === 0) &&
+                        (selectedGazette.terminates?.length === 0)
+                    ) && (
+                            <PersonPreview
+                                adds={selectedGazette.adds || []}
+                                moves={selectedGazette.moves || []}
+                                terminates={selectedGazette.terminates || []}
+                                selectedGazetteIndex={selectedGazetteIndex}
+                                selectedPresidentIndex={selectedPresidentIndex}
+                                data={data}
+                                setData={setData}
+                                setRefreshFlag={setRefreshFlag}
+                                handleGazetteCommitted={handleGazetteCommitted}
+                                handleSave={handleSave}
+                            />
+                        )}
 
                 </>
             ) : (

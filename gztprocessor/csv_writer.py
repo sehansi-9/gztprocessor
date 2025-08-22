@@ -259,7 +259,7 @@ def generate_person_csvs(gazette_number: str, date_str: str, transactions: dict)
         terminate_rows.append({
             "transaction_id": transaction_id,
             "parent": old_ministry,
-            "parent_type": "minister", 
+            "parent_type": "minister",
             "child": name,
             "child_type": "person",
             "rel_type": "AS_APPOINTED",
@@ -280,36 +280,52 @@ def generate_person_csvs(gazette_number: str, date_str: str, transactions: dict)
         })
         counter += 1
 
-    # Write ADD CSV
+    # File paths
+    add_csv = output_dir / "add.csv"
+    terminate_csv = output_dir / "terminate.csv"
+    move_csv = output_dir / "move.csv"
+
+    # Write ADD CSV or delete if empty
     if add_rows:
-        with open(output_dir / "add.csv", "w", newline='', encoding="utf-8") as f:
+        with open(add_csv, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "parent", "parent_type",
                 "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(add_rows)
-        print(f"✅ ADD CSV written to: {output_dir / 'add.csv'}")
+        print(f"✅ ADD CSV written to: {add_csv}")
+    else:
+        if add_csv.exists():
+            add_csv.unlink()
+            print(f"🗑️ ADD CSV deleted because no rows present.")
 
-    # Write TERMINATE CSV
+    # Write TERMINATE CSV or delete if empty
     if terminate_rows:
-        with open(output_dir / "terminate.csv", "w", newline='', encoding="utf-8") as f:
+        with open(terminate_csv, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "parent", "parent_type",
                 "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(terminate_rows)
-        print(f"✅ TERMINATE CSV written to: {output_dir / 'terminate.csv'}")
+        print(f"✅ TERMINATE CSV written to: {terminate_csv}")
+    else:
+        if terminate_csv.exists():
+            terminate_csv.unlink()
+            print(f"🗑️ TERMINATE CSV deleted because no rows present.")
 
-    # Write MOVE CSV
+    # Write MOVE CSV or delete if empty
     if move_rows:
-        with open(output_dir / "move.csv", "w", newline='', encoding="utf-8") as f:
+        with open(move_csv, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[
                 "transaction_id", "old_parent", "new_parent",
                 "parent_type", "child", "child_type", "rel_type", "date"
             ])
             writer.writeheader()
             writer.writerows(move_rows)
-        print(f"✅ MOVE CSV written to: {output_dir / 'move.csv'}")
-
+        print(f"✅ MOVE CSV written to: {move_csv}")
+    else:
+        if move_csv.exists():
+            move_csv.unlink()
+            print(f"🗑️ MOVE CSV deleted because no rows present.")

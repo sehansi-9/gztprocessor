@@ -45,7 +45,7 @@ const TransactionPreview = ({
         return moves.some(item => makeKey(item.mName, item.dName) === key);
     };
 
-      // Automatically show previous ministry inputs for departments
+    // Automatically show previous ministry inputs for departments
     // that have a previous_ministry from backend but show_previous_ministry is falsey
     useEffect(() => {
         if (!gazette || !gazette.transactions) return;
@@ -381,45 +381,45 @@ const TransactionPreview = ({
         }
     };
 
-   const handleApproveCommitAmendment = async () => {
-    setCommitting(true);
+    const handleApproveCommitAmendment = async () => {
+        setCommitting(true);
 
-    // Filter out invalid/empty records
-    const filteredAdds = adds.filter(item => item.department?.trim() && item.to_ministry?.trim());
-    const filteredMoves = moves.filter(item => item.department?.trim() && item.from_ministry?.trim() && item.to_ministry?.trim());
-    const filteredTerminates = terminates.filter(item => item.department?.trim() && item.from_ministry?.trim());
+        // Filter out invalid/empty records
+        const filteredAdds = adds.filter(item => item.department?.trim() && item.to_ministry?.trim());
+        const filteredMoves = moves.filter(item => item.department?.trim() && item.from_ministry?.trim() && item.to_ministry?.trim());
+        const filteredTerminates = terminates.filter(item => item.department?.trim() && item.from_ministry?.trim());
 
-    // Prepare the payload
-    const payload = {
-        transactions: {
-            adds: filteredAdds.map(item => ({
-                type: "ADD",
-                department: item.department,
-                to_ministry: item.to_ministry,
-                position: Number(item.position) || 0,
-            })),
-            moves: filteredMoves.map(item => ({
-                type: "MOVE",
-                department: item.department,
-                from_ministry: item.from_ministry,
-                to_ministry: item.to_ministry,
-                position: Number(item.position) || 0,
-            })),
-            terminates: filteredTerminates.map(item => ({
-                type: "TERMINATE",
-                department: item.department,
-                from_ministry: item.from_ministry,
-            })),
-        },
-    };
+        // Prepare the payload
+        const payload = {
+            transactions: {
+                adds: filteredAdds.map(item => ({
+                    type: "ADD",
+                    department: item.department,
+                    to_ministry: item.to_ministry,
+                    position: Number(item.position) || 0,
+                })),
+                moves: filteredMoves.map(item => ({
+                    type: "MOVE",
+                    department: item.department,
+                    from_ministry: item.from_ministry,
+                    to_ministry: item.to_ministry,
+                    position: Number(item.position) || 0,
+                })),
+                terminates: filteredTerminates.map(item => ({
+                    type: "TERMINATE",
+                    department: item.department,
+                    from_ministry: item.from_ministry,
+                })),
+            },
+        };
 
-    try {
-        await axios.post(
-            `http://localhost:8000/mindep/amendment/${gazette.date}/${gazette.number}`,
-            payload
-        );
+        try {
+            await axios.post(
+                `http://localhost:8000/mindep/amendment/${gazette.date}/${gazette.number}`,
+                payload
+            );
 
-        // Update frontend state
+            // Update frontend state
             const newData = JSON.parse(JSON.stringify(data));
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = null;
             newData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].committed = true;
@@ -432,13 +432,13 @@ const TransactionPreview = ({
                 onGazetteCommitted(selectedGazetteIndex);
             }
 
-    } catch (error) {
-        console.error('Error committing amendment:', error);
-        alert('❌ Failed to commit amendment. Please try again.');
-    } finally {
-        setCommitting(false);
-    }
-};
+        } catch (error) {
+            console.error('Error committing amendment:', error);
+            alert('❌ Failed to commit amendment. Please try again.');
+        } finally {
+            setCommitting(false);
+        }
+    };
 
 
 
