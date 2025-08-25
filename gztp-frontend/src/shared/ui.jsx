@@ -62,6 +62,7 @@ export const CollapsibleSection = ({
     getLatestUpdatedState,
     highlightMatch,
     SearchBar,
+    onFetchPrevious
 }) => {
     const isMinisters = type === "ministers";
     const filteredData = isMinisters ? filteredMinisters : filteredPersons;
@@ -180,7 +181,18 @@ export const CollapsibleSection = ({
                                                 width: "100%",
                                             }}
                                         >
+                                            
                                             {isMinisters ? "Departments" : "Portfolios"}
+                                            {/* Show button only for first gazette */}
+                                            {selectedGazetteIndex === 0 && onFetchPrevious && (
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    onClick={onFetchPrevious}
+                                                >
+                                                    Fetch previous president's last state
+                                                </Button>
+                                            )}
                                             {gazetteWarnings[selectedGazetteIndex] && (
                                                 <Button
                                                     size="small"

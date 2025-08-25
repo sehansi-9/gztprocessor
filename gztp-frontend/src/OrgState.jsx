@@ -3,7 +3,7 @@ import { Box, Button, Typography, Paper, Avatar, Divider } from '@mui/material';
 import AddGazette from './AddGazette';
 import TransactionPreview from './OrgTransactionPreview';
 import ErrorIcon from '@mui/icons-material/Error';
-import { fetchGazettesMeta, loadScopeState, handleGazetteCommittedShared, deriveLatestUpdatedState } from './shared/state';
+import { fetchGazettesMeta, loadScopeState, handleGazetteCommittedShared, deriveLatestUpdatedState, handleFetchPrevious } from './shared/state';
 import { SearchBar, CollapsibleSection } from './shared/ui';
 
 const Data = {
@@ -150,8 +150,6 @@ export default function StateTable() {
     }, [selectedPresidentIndex]);
 
 
-
-
     const handleGazetteCommitted = (committedIndex) => {
         setGazetteWarnings(() => handleGazetteCommittedShared(data, selectedPresidentIndex, committedIndex));
     };
@@ -199,8 +197,7 @@ export default function StateTable() {
                                 '&::before, &::after': {
                                     content: '""',
                                     display: 'block',
-                                    flex: '0 0 16px',
-                                    width: 7,
+                                    
                                 },
                             }}
                         >
@@ -361,6 +358,7 @@ export default function StateTable() {
                         getLatestUpdatedState={getLatestUpdatedState}
                         highlightMatch={highlightMatch}
                         SearchBar={SearchBar}
+                         onFetchPrevious={() => handleFetchPrevious("ministers", selectedPresidentIndex, data, selectedGazetteIndex, setData)}
                     />
 
                     <TransactionPreview

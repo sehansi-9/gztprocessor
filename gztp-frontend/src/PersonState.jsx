@@ -5,7 +5,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import PersonPreview from './PersonPreview'
 import { downloadCsv } from './shared/downloads';
 import { refreshPersonGazette, fetchPersonDraft, savePersonDraft } from './shared/transactions';
-import { fetchGazettesMeta, loadScopeState, handleGazetteCommittedShared, deriveLatestUpdatedState } from './shared/state';
+import { fetchGazettesMeta, loadScopeState, handleGazetteCommittedShared, deriveLatestUpdatedState, handleFetchPrevious } from './shared/state';
 import { SearchBar, CollapsibleSection, Toolbar } from './shared/ui';
 
 const Data = {
@@ -180,6 +180,7 @@ export default function PersonState() {
         }
     }
 
+
     function handleSave() {
         const gazette = data.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex];
         savePersonDraft({ gazette, data, selectedPresidentIndex, selectedGazetteIndex })
@@ -233,9 +234,7 @@ export default function PersonState() {
                                 // soft spacers at both ends so names aren’t cut at edges
                                 '&::before, &::after': {
                                     content: '""',
-                                    display: 'block',
-                                    flex: '0 0 0px',
-                                    width: 3,
+                                    display: 'block'
                                 },
                             }}
                         >
@@ -394,6 +393,7 @@ export default function PersonState() {
                         getLatestUpdatedState={getLatestUpdatedState}
                         highlightMatch={highlightMatch}
                         SearchBar={SearchBar}
+                         onFetchPrevious={() => handleFetchPrevious("persons", selectedPresidentIndex, data, selectedGazetteIndex, setData)}
                     />
                     <Box mt={4}>
                         <Typography variant="h6" gutterBottom>

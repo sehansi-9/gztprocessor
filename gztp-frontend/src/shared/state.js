@@ -99,4 +99,18 @@ export const deriveLatestUpdatedState = (data, selectedPresidentIndex, selectedG
     return updatedData;
 };
 
+export const handleFetchPrevious = (type, selectedPresidentIndex,data,selectedGazetteIndex, setData) => {
+    if (selectedPresidentIndex === 0) return; // No previous president
 
+    const updatedData = JSON.parse(JSON.stringify(data));
+    const prevPresident = data.presidents[selectedPresidentIndex - 1];
+    const lastGazette = prevPresident.gazettes?.[prevPresident.gazettes.length - 1];
+    if (!lastGazette) return;
+
+    const field = type === "ministers" ? "ministers" : "persons";
+
+    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex][field] =
+        lastGazette[field] || [];
+
+    setData(updatedData);
+};
