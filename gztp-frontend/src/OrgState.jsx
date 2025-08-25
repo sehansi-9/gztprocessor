@@ -79,40 +79,49 @@ export default function StateTable() {
         );
     }) || [];
 
-    useEffect(() => {
-        const loadState = async () => {
-            const currentPresident = data.presidents[selectedPresidentIndex];
-            const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
-            if (!currentGazette) return;
+   useEffect(() => {
+    const loadState = async () => {
+        const currentPresident = data.presidents[selectedPresidentIndex];
+        const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
+        if (!currentGazette) return;
 
-            if (currentGazette.ministers !== null && currentGazette.ministers !== undefined) return;
+        if (currentGazette.ministers !== null && currentGazette.ministers !== undefined) return;
 
-            setLoading(true);
-            try {
-                const backendMinisters = await loadScopeState('mindep', currentGazette.date, currentGazette.number);
-                const updatedData = JSON.parse(JSON.stringify(data));
+        setLoading(true);
+        try {
+            const backendMinisters = await loadScopeState('mindep', currentGazette.date, currentGazette.number);
+            const updatedData = JSON.parse(JSON.stringify(data));
 
-                if (backendMinisters?.length > 0) {
-                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = backendMinisters;
+            if (backendMinisters?.length > 0) {
+                updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = backendMinisters;
+            } else {
+                if (selectedGazetteIndex > 0) {
+                    // previous gazette of the same president
+                    const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
+                } else if (selectedPresidentIndex > 0) {
+                    // first gazette of this president, assign last ministers from previous president
+                    const prevPresident = data.presidents[selectedPresidentIndex - 1];
+                    const lastGazette = prevPresident.gazettes?.[prevPresident.gazettes.length - 1];
+                    const prevMinisters = lastGazette?.ministers || [];
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
                 } else {
-                    if (selectedGazetteIndex > 0) {
-                        const prevMinisters = currentPresident.gazettes[selectedGazetteIndex - 1]?.ministers || [];
-                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = prevMinisters;
-                    } else {
-                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = [];
-                    }
+                    // no previous president, no previous gazette
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].ministers = [];
                 }
-
-                setData(updatedData);
-            } catch (err) {
-                console.warn("Failed to fetch state:", err);
-            } finally {
-                setLoading(false);
             }
-        };
 
-        loadState();
-    }, [data, selectedPresidentIndex, selectedGazetteIndex, refreshFlag]);
+            setData(updatedData);
+        } catch (err) {
+            console.warn("Failed to fetch state:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    loadState();
+}, [data, selectedPresidentIndex, selectedGazetteIndex, refreshFlag]);
+
 
     useEffect(() => {
         const fetchGazettes = async () => {

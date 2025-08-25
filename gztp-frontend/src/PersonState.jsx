@@ -87,39 +87,48 @@ export default function PersonState() {
 
 
     useEffect(() => {
-        const loadState = async () => {
-            const currentPresident = data.presidents[selectedPresidentIndex];
-            const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
-            if (!currentGazette) return;
+    const loadState = async () => {
+        const currentPresident = data.presidents[selectedPresidentIndex];
+        const currentGazette = currentPresident?.gazettes?.[selectedGazetteIndex];
+        if (!currentGazette) return;
 
-            if (currentGazette.persons !== null && currentGazette.persons !== undefined) return;
+        if (currentGazette.persons !== null && currentGazette.persons !== undefined) return;
 
-            setLoading(true);
-            try {
-                const backendPersons = await loadScopeState('person', currentGazette.date, currentGazette.number);
-                const updatedData = JSON.parse(JSON.stringify(data));
+        setLoading(true);
+        try {
+            const backendPersons = await loadScopeState('person', currentGazette.date, currentGazette.number);
+            const updatedData = JSON.parse(JSON.stringify(data));
 
-                if (backendPersons?.length > 0) {
-                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = backendPersons;
+            if (backendPersons?.length > 0) {
+                updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = backendPersons;
+            } else {
+                if (selectedGazetteIndex > 0) {
+                    // previous gazette of the same president
+                    const prevPersons = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
+                } else if (selectedPresidentIndex > 0) {
+                    // first gazette of this president, assign last persons from previous president
+                    const prevPresident = data.presidents[selectedPresidentIndex - 1];
+                    const lastGazette = prevPresident.gazettes?.[prevPresident.gazettes.length - 1];
+                    const prevPersons = lastGazette?.persons || [];
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
                 } else {
-                    if (selectedGazetteIndex > 0) {
-                        const prevPersons = currentPresident.gazettes[selectedGazetteIndex - 1]?.persons || [];
-                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = prevPersons;
-                    } else {
-                        updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = [];
-                    }
+                    // no previous president, no previous gazette
+                    updatedData.presidents[selectedPresidentIndex].gazettes[selectedGazetteIndex].persons = [];
                 }
-
-                setData(updatedData);
-            } catch (err) {
-                console.warn("Failed to fetch state:", err);
-            } finally {
-                setLoading(false);
             }
-        };
 
-        loadState();
-    }, [data, selectedPresidentIndex, selectedGazetteIndex, refreshFlag]);
+            setData(updatedData);
+        } catch (err) {
+            console.warn("Failed to fetch state:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    loadState();
+}, [data, selectedPresidentIndex, selectedGazetteIndex, refreshFlag]);
+;
 
     useEffect(() => {
         const fetchGazettes = async () => {
