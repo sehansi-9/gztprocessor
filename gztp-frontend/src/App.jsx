@@ -6,7 +6,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<OrgState />} />
+        <Route path="/org" element={<OrgState />} />
         <Route path="/person" element={<PersonState/>}/>
       </Routes>
     </Router>
