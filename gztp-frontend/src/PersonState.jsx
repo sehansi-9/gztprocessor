@@ -11,25 +11,42 @@ import { SearchBar, CollapsibleSection, Toolbar } from './shared/ui';
 const Data = {
     presidents: [
         {
-            name: 'President A',
-            imageUrl: '',
-            created: '2022-01-01',
+            name: 'Mahinda Rajapaksa',
+            imageUrl: 'https://pbs.twimg.com/profile_images/541867053351583744/rcxem8NU_400x400.jpeg',
+            created: '2005-11-19',
+            endDate: '2015-01-09',
             gazettes: [],
         },
         {
-            name: 'President B',
-            imageUrl: '',
-            created: '2024-01-01',
+            name: 'Maithripala Sirisena',
+            imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK63FcG01JQFYLMOW3Fiz7aAt53swCyNpekQ&s',
+            created: '2015-01-09',
+            endDate: '2019-11-18',
             gazettes: [],
         },
         {
-            name: 'President C',
-            imageUrl: '',
-            created: '2024-01-01',
+            name: 'Gotabaya Rajapaksa',
+            imageUrl: 'https://etimg.etb2bimg.com/photo/90283189.cms',
+            created: '2019-11-18',
+            endDate: '2022-07-14',
             gazettes: [],
         },
+        {
+            name: 'Ranil Wickremesinghe',
+            imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxqJKbd0DrTJUz80nbZGkkh1DVieN2p4wZAA&s',
+            created: '2022-07-21',
+            endDate: '2024-09-30',
+            gazettes: [],
+        },
+        {
+            name: 'Anura Kumara Dissanayake',
+            imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdOoGPxjbGmDh3erxJupQRQRIDT7IwIBNwbw&s',
+            created: '2024-10-01',
+            endDate: null,
+            gazettes: [],
+        },
+    ]
 
-    ],
 };
 
 function highlightMatch(text, query) {
@@ -106,18 +123,29 @@ export default function PersonState() {
 
     useEffect(() => {
         const fetchGazettes = async () => {
+            if (!selectedPresident) return;
+            if (selectedPresident.gazettes && selectedPresident.gazettes.length > 0) return;
+
+            const startDate = selectedPresident.created;
+            const endDate = selectedPresident.endDate || new Date().toISOString().split("T")[0]; // today if still in office
+
             try {
-                const { gazettes, warnings } = await fetchGazettesMeta('person', '2022-07-22', '2022-09-22');
-                const updated = JSON.parse(JSON.stringify(Data));
-                updated.presidents[selectedPresidentIndex].gazettes = gazettes;
-                setData(updated);
+                const { gazettes, warnings } = await fetchGazettesMeta('person', startDate, endDate);
+
+                setData(prev => {
+                    const updated = JSON.parse(JSON.stringify(prev));
+                    updated.presidents[selectedPresidentIndex].gazettes = gazettes;
+                    return updated;
+                });
+
                 setGazetteWarnings(warnings);
             } catch (err) {
                 console.error("Failed to fetch gazettes:", err);
             }
         };
+
         fetchGazettes();
-    }, []);
+    }, [selectedPresidentIndex]);
 
     const handleGazetteCommitted = (committedIndex) => {
         setGazetteWarnings(() => handleGazetteCommittedShared(data, selectedPresidentIndex, committedIndex));
@@ -171,26 +199,78 @@ export default function PersonState() {
                     <Button> Add President </Button>
                 </>
             ) : (
-                <Box display="flex" gap={14} mb={4}>
-                    {presidents.map((pres, idx) => (
+             <Box sx={{ maxWidth: '100%', overflow: 'hidden', mb: 4 }}>
+                    {/* SCROLLER: only X scrolls, with comfy side padding */}
+                    <Box
+                        sx={{
+                            overflowX: 'auto',
+                            overflowY: 'hidden',
+                            px: 1,
+                            py: 1,
+                            scrollbarWidth: 'none', // Firefox
+                            '&::-webkit-scrollbar': {
+                                display: 'none', // Chrome, Safari
+                            },
+                        }}
+                    >
+                        {/* TRACK: actual content row */}
                         <Box
-                            key={idx}
-                            onClick={() => {
-                                setSelectedPresidentIndex(idx);
-                                setSelectedGazetteIndex(0);
-                            }}
                             sx={{
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                transform: idx === selectedPresidentIndex ? 'scale(1.5)' : 'scale(1)',
-                                transition: 'transform 0.3s',
+                                display: 'flex',
+                                gap: 8,
+                                alignItems: 'flex-start',
+                                width: 'max-content',
+                                position: 'relative',
+                                // soft spacers at both ends so names aren’t cut at edges
+                                '&::before, &::after': {
+                                    content: '""',
+                                    display: 'block',
+                                    flex: '0 0 0px',
+                                    width: 3,
+                                },
                             }}
                         >
-                            <Avatar src={pres.imageUrl} sx={{ width: 36, height: 36, mb: 1, ml: 2.5, boxShadow: idx === selectedPresidentIndex ? 4 : 1 }} />
-                            <Typography variant="body1" fontWeight="medium">{pres.name}</Typography>
-                            <Typography variant="caption" color="text.secondary">{pres.created?.split('-')[0] || 'N/A'}</Typography>
+                            {presidents.map((pres, idx) => (
+                                <Box
+                                    key={idx}
+                                    onClick={() => {
+                                        setSelectedPresidentIndex(idx);
+                                        setSelectedGazetteIndex(0);
+                                    }}
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        textAlign: "center",
+                                        cursor: "pointer",
+                                        transform: idx === selectedPresidentIndex ? "scale(1.5)" : "scale(1)",
+                                        transformOrigin: "center top",
+                                        transition: "transform 0.3s",
+                                        minWidth: 80,
+                                        overflowY: 'hidden',
+                                        paddingBottom: 4,
+                                    }}
+                                >
+                                    <Avatar
+                                        src={pres.imageUrl}
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            mb: 1,
+                                            boxShadow: idx === selectedPresidentIndex ? 4 : 1,
+                                        }}
+                                    />
+                                    <Typography variant="body2" fontWeight="medium" noWrap>
+                                        {pres.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {pres.created ? `${pres.created.split('-')[0]} - ${pres.endDate?.split('-')[0] || 'Present'}` : 'N/A'}
+
+                                    </Typography>
+                                </Box>
+                            ))}
                         </Box>
-                    ))}
+                    </Box>
                 </Box>
             )}
 
